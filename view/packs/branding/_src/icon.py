@@ -1,0 +1,25 @@
+import os
+ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
+A = "#e6a65d"
+svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<defs>
+<linearGradient id="pl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2230"/><stop offset="1" stop-color="#07090c"/></linearGradient>
+<radialGradient id="gl" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="{A}" stop-opacity="0.55"/><stop offset="0.6" stop-color="{A}" stop-opacity="0.16"/><stop offset="1" stop-color="{A}" stop-opacity="0"/></radialGradient>
+</defs>
+<rect x="6" y="6" width="244" height="244" rx="34" fill="url(#pl)" stroke="#2f3947" stroke-width="6"/>
+<circle cx="128" cy="132" r="118" fill="url(#gl)"/>
+<path d="M128 40 L202 62 L202 130 Q200 188 128 228 Q56 188 54 130 L54 62 Z" fill="#0a0c10" stroke="#56657e" stroke-width="7" stroke-linejoin="round"/>
+<path d="M128 56 L188 74 L188 130 Q186 176 128 210 Q70 176 68 130 L68 74 Z" fill="#141922" stroke="{A}" stroke-width="7" stroke-linejoin="round"/>
+<path d="M128 74 L128 196" stroke="#0a0c10" stroke-width="10"/>
+<path d="M78 112 L178 112" stroke="#0a0c10" stroke-width="10"/>
+<g transform="rotate(38 128 130)">
+<path d="M128 6 L145 40 L142 166 L114 166 L111 40 Z" fill="{A}" stroke="#0a0c10" stroke-width="7" stroke-linejoin="round"/>
+<path d="M128 22 L128 160" stroke="#0a0c10" stroke-width="7" stroke-opacity="0.55"/>
+<path d="M84 176 L172 176" stroke="#0a0c10" stroke-width="20" stroke-linecap="square"/>
+<path d="M84 176 L172 176" stroke="#56657e" stroke-width="9" stroke-linecap="square"/>
+<path d="M128 180 L128 226" stroke="#0a0c10" stroke-width="18"/>
+<circle cx="128" cy="232" r="12" fill="#0a0c10" stroke="#56657e" stroke-width="5"/>
+</g>
+</svg>
+'''
+open(os.path.join(ROOT, "icon.svg"), "w").write(svg)

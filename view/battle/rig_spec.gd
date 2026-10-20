@@ -15,6 +15,8 @@ var canvas := DEFAULT_CANVAS
 var parts: Array[Dictionary] = []
 var poses: Dictionary = {}
 var glow_parts: Array[StringName] = []
+## Attach points for swappable parts (gear): slot id -> {parent, at (Vector2), z}.
+var slots: Dictionary = {}
 var is_placeholder := false
 
 static func load_for(p_enemy_id: StringName, accent_fallback: Color) -> RigSpec:
@@ -42,18 +44,21 @@ func _read(data: Dictionary) -> void:
 	for raw: Dictionary in data.get("parts", []):
 		parts.append({
 			"id": StringName(raw["id"]), "file": raw["file"], "parent": StringName(raw.get("parent", "")),
-			"pivot": _vec(raw["pivot"]), "at": _vec(raw["at"]), "z": int(raw.get("z", 0)),
+			"pivot": to_vec(raw["pivot"]), "at": to_vec(raw["at"]), "z": int(raw.get("z", 0)),
 		})
 	for pose_id: String in data.get("poses", {}):
 		var pose := {}
 		for part_id: String in data["poses"][pose_id]:
 			var entry: Dictionary = data["poses"][pose_id][part_id]
-			pose[StringName(part_id)] = {"rot": float(entry.get("rot", 0.0)), "move": _vec(entry.get("move", [0, 0]))}
+			pose[StringName(part_id)] = {"rot": float(entry.get("rot", 0.0)), "move": to_vec(entry.get("move", [0, 0]))}
 		poses[StringName(pose_id)] = pose
+	for slot_id: String in data.get("slots", {}):
+		var raw_slot: Dictionary = data["slots"][slot_id]
+		slots[StringName(slot_id)] = {"parent": StringName(raw_slot["parent"]), "at": to_vec(raw_slot["at"]), "z": int(raw_slot.get("z", 0))}
 	for glow_id: String in data.get("glow_parts", []):
 		glow_parts.append(StringName(glow_id))
 
-static func _vec(pair: Array) -> Vector2:
+static func to_vec(pair: Array) -> Vector2:
 	return Vector2(float(pair[0]), float(pair[1]))
 
 static func _placeholder(p_enemy_id: StringName, p_accent: Color) -> RigSpec:

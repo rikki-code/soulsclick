@@ -43,3 +43,7 @@ description: >
 
 - `--check-only` can take over a minute and hangs on the project lock while an editor is open; run it on an rsync copy of the project in the scratchpad.
 - Autoloads (`Audio`) are invisible to `-s` scripts, so test menu code by running the scene: `godot --headless --path . game/menu_root.tscn --quit-after 60`.
+
+## Run entry (G1)
+
+Menu: Continue run (if `SaveStore.has_run()`), New run, Upgrades (permanent levels for Embers, `ProfileData.buy_level`), Settings; `GameSession.launch` (`NEW_RUN`/`CONTINUE_RUN`) tells `GameRoot` how to start. `ProfileData` v2: `embers` replaces `souls` (migrated), `levels` = permanent stat levels, `permanent(table)` gives a `StatLevels`. Keys: `MENU_NEW_RUN/CONTINUE_RUN/UPGRADES`, `EMBERS_LINE`, `STAT_*`, `TAG_*`, `ROOM_*`, `REWARD_*`, `SUMMARY_*`, `OMEN_*`, `PLACE_*`, `EQUIP_*`, `RELIC_*`, `AFFIX_*`.

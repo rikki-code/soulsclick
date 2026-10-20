@@ -10,7 +10,7 @@ func is_combat() -> bool:
 	return false
 
 ## A door of this kind that is not in `taken` (signature -> true), or null when the kind has no variant left.
-func make_door(_realm: RealmDefinition, _rng: RandomNumberGenerator, taken: Dictionary) -> Door:
+func make_door(_realm: RealmDefinition, _rng: RandomNumberGenerator, taken: Dictionary, _depth := 0) -> Door:
 	var door := Door.make(id())
 	return null if taken.has(door.signature()) else door
 
@@ -22,11 +22,13 @@ func enter(run: Run, door: Door) -> RoomPlan:
 	var plan := RoomPlan.new()
 	plan.kind_id = id()
 	plan.realm_index = run.realm_index
+	plan.depth = run.depth
+	plan.node = run.upcoming_node()
 	plan.step_index = run.step_index
 	plan.door_index = door.index
 	plan.door = door
 	plan.is_combat = is_combat()
-	plan.combat_level = run.realm_index + 1
+	plan.combat_level = run.curve().combat_level(run.depth)
 	plan.player_hp = run.hp
 	plan.player_max_hp = run.config.max_hp
 	_fill_plan(run, door, plan)
@@ -41,4 +43,4 @@ func _fill_plan(_run: Run, _door: Door, _plan: RoomPlan) -> void:
 	pass
 
 func _reward_seed(run: Run, door: Door) -> int:
-	return RunRng.seed_for(run.config.seed, RunRng.REWARD, run.realm_index, run.step_index, door.index)
+	return RunRng.seed_for(run.config.seed, RunRng.REWARD, run.depth, run.step_index, door.index)

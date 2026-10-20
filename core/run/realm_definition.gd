@@ -10,6 +10,8 @@ extends Resource
 @export var fight_pool: Array[RealmEnemyEntry] = []
 @export var elite_pool: Array[RealmEnemyEntry] = []
 @export var boss: EnemyDefinition
+## Endless difficulty curve; a default curve is used when null.
+@export var depth_curve: DepthCurve
 @export var elite_hp_multiplier := 1.3
 @export var elite_souls_multiplier := 2.0
 @export var bonfire_heal_share := 0.4
@@ -20,6 +22,15 @@ extends Resource
 @export var shop_reroll_price := 15
 ## Chance a normal fight also offers a relic-or-heal pick.
 @export var fight_pick_chance := 0.4
+
+var _fallback_curve: DepthCurve
+
+func curve() -> DepthCurve:
+	if depth_curve != null:
+		return depth_curve
+	if _fallback_curve == null:
+		_fallback_curve = DepthCurve.new()
+	return _fallback_curve
 
 func step_count() -> int:
 	return step_rules.size()

@@ -11,6 +11,21 @@ description: >
 `export_presets.cfg`: `macos-universal`, `linux-x86_64`, `linux-arm64`, `windows-x86_64`,
 `windows-arm64`, `web`. Output: `build/<preset>/`.
 
+## Export filters (every preset)
+
+- `exclude_filter="build/*, tests/*, tools/*, addons/godot_ai/*, */_previews/*, */_src/*, ci/*"`,
+  `include_filter="*.json"`. The json include is required: `rig.json`/`gear.json` are read with `FileAccess`,
+  and non-resource files are not exported otherwise. Keep both lines identical in all presets.
+- Excluding `addons/godot_ai/*` is safe even though `project.godot` has the `_mcp_game_helper` autoload: the
+  addon's export plugin (`export/mcp_export_plugin.gd`) strips that autoload from the exported project settings
+  (works in headless export). Verified: pack exported without the addon runs with no autoload errors.
+- Check a pack without templates: `godot --headless --path . --export-pack web /tmp/x.pck`, then
+  `strings /tmp/x.pck | grep -E 'rig.json|_previews|_src|tests/'`.
+- Keep `rendering/textures/vram_compression/import_etc2_astc=true` in `project.godot` (the web/mobile presets
+  need it; without it exports fail with "configuration errors"), and run `--import` after changing it.
+- Local export needs a template folder named exactly like the editor version (`4.7.2.stable` for the custom
+  build); `4.7.stable` is not found.
+
 ## Local export
 
 ```

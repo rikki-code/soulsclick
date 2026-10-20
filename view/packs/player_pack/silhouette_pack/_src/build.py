@@ -357,6 +357,18 @@ GEAR_NOTES = {
 }
 
 
+# Per-gear pose offsets, on top of the shared pose. "default" applies to every pose without its own key.
+# move = slide the whole arm of that hand (canvas px), rot = turn the hand and so the gear (deg, clockwise).
+# Idle rests low (shields sunk, long blades tilted outward and off the edge) so the enemy and the player bars stay clear.
+POSE_OFFSETS = {
+    "kite": {"default": {"move": [0, 110]}, "block": {}, "parry": {}},
+    "tower": {"default": {"move": [0, 330]}, "block": {"move": [0, 110]}, "parry": {"move": [0, 250]}},
+    "dagger": {"default": {"rot": 30}, "attack": {}, "staggered": {}},
+    "sword": {"default": {"rot": 30}, "attack": {}, "staggered": {}},
+    "greatsword": {"default": {"rot": 36}, "attack": {}, "staggered": {}},
+}
+
+
 def build_gear():
     gear = {}
     for kind, items in GEAR.items():
@@ -367,6 +379,8 @@ def build_gear():
             off, size, nb = a.save(os.path.join(PACK, kind, gid + ".svg"))
             gear[kind][gid] = {"file": "%s/%s.svg" % (kind, gid), "pivot": list(off), "size": list(size),
                                "glow": True, "note": GEAR_NOTES[gid]}
+            if gid in POSE_OFFSETS:
+                gear[kind][gid]["pose_offsets"] = POSE_OFFSETS[gid]
             if nb > 30000:
                 print("WARN %s %d bytes" % (gid, nb))
     with open(os.path.join(PACK, "gear.json"), "w") as f:
@@ -394,8 +408,20 @@ def inner(path):
     return re.search(r"<svg[^>]*>(.*)</svg>", t, flags=re.S).group(1)
 
 
+def offset_pose(rig, gear, pose_id, shield, weapon):
+    pose = json.loads(json.dumps(rig["poses"][pose_id]))
+    for arm, hand, kind, gid in (("arm_l", "hand_l", "shields", shield), ("arm_r", "hand_r", "weapons", weapon)):
+        offs = gear[kind][gid].get("pose_offsets", {})
+        o = offs.get(pose_id, offs.get("default", {}))
+        if "move" in o:
+            pose[arm]["move"] = [pose[arm]["move"][0] + o["move"][0], pose[arm]["move"][1] + o["move"][1]]
+        if "rot" in o:
+            pose[hand]["rot"] += o["rot"]
+    return pose
+
+
 def compose(rig, gear, pose_id, shield, weapon):
-    pose = rig["poses"][pose_id]
+    pose = offset_pose(rig, gear, pose_id, shield, weapon)
     parts = {p["id"]: dict(p) for p in rig["parts"]}
     files = {pid: os.path.join(PACK, "hands", p["file"]) for pid, p in parts.items()}
     for slot, kind, gid in (("shield", "shields", shield), ("weapon", "weapons", weapon)):

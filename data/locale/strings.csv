@@ -21,17 +21,134 @@ BATTLE_BLOCK,Block,Блок
 BATTLE_PARRY,Parry!,Парирование!
 BATTLE_VICTORY,Foe vanquished,Враг повержен
 BATTLE_DEATH,You have fallen,Вы пали в бою
-BATTLE_REVIVE,Revive (watch ad),Воскреснуть (реклама)
+BATTLE_REVIVE,Revive (ads: %d),Воскреснуть (реклама: %d)
 BATTLE_RETRY,Try again,Ещё раз
 BATTLE_SOULS,Souls: %d,Души: %d
 BATTLE_CONTINUE,Continue,Продолжить
 ENEMY_GRUNT,Hollow Footman,Пустой пехотинец
 ENEMY_KNIGHT,Ashen Knight,Пепельный рыцарь
 ENEMY_WARDEN,Cinder Warden,Хранитель углей
-HINT_HANDS,Tap the left half to block. Tap the right half to attack.,Нажмите слева чтобы блокировать. Справа чтобы бить.
-HINT_BUTTONS,Use the buttons below to attack and block.,Кнопки внизу: удар и блок.
-HINT_SWIPES,Swipe up to attack. Swipe down to block.,Свайп вверх: удар. Свайп вниз: блок.
+HINT_HANDS,"Hold the left side to block, tap it as the ring closes to parry. Tap the right side to attack.","Держите слева — блок, нажмите, когда кольцо сомкнётся, — парирование. Справа — удар."
+HINT_BUTTONS,"Hold Block to guard, press it as the ring closes to parry.","Держите «Блок» для защиты, нажмите, когда кольцо сомкнётся, — парирование."
+HINT_SWIPES,"Swipe up to attack. Swipe down and hold to block.","Свайп вверх — удар. Свайп вниз и держать — блок."
 REALM_1,Ashen Halls,Пепельные залы
 ENEMY_HOUND,Chain Hound,Цепной пёс
 ENEMY_DANCER,Veil Dancer,Танцующая в вуали
 ENEMY_BULWARK,Bell Warden,Колокольный страж
+ITEM_FLASK,Ember Flask,Фляга с углями
+ITEM_FLASK_DESC,Heals 35% of max HP. 2 charges.,Лечит 35% макс. здоровья. 2 заряда.
+ITEM_EMBER_BOMB,Ember Bomb,Угольная бомба
+ITEM_EMBER_BOMB_DESC,Instant damage and a short stagger.,Мгновенный урон и короткое оглушение.
+ITEM_WHETSTONE_OIL,Whetstone Oil,Масло для точила
+ITEM_WHETSTONE_OIL_DESC,+25% damage for the run.,+25% урона на весь забег.
+ITEM_WARDING_ASH,Warding Ash,Охранный пепел
+ITEM_WARDING_ASH_DESC,+40% parry window for the run.,+40% окна парирования на весь забег.
+MENU_NEW_RUN,New run,Новый забег
+MENU_CONTINUE_RUN,Continue run,Продолжить забег
+MENU_UPGRADES,Upgrades,Улучшения
+EMBERS_LINE,Embers: %d,Угли: %d
+UPGRADES_TITLE,Upgrades,Улучшения
+UPGRADES_ROW,%s +%s  (Lv %d)  -  %d Embers,%s +%s  (ур. %d)  -  %d углей
+STAT_MAX_HP,Health,Здоровье
+STAT_MAX_STAMINA,Stamina,Выносливость
+STAT_ATTACK_DAMAGE,Damage,Урон
+STAT_STAMINA_REGEN,Stamina regen,Восст. выносливости
+OMEN_TITLE,Choose an omen,Выберите знамение
+OMEN_HINT,Each omen favors two themes for this run.,Каждое знамение усиливает две темы забега.
+TAG_PARRY,Parry,Парирование
+TAG_BLOCK,Block,Блок
+TAG_STRIKE,Strike,Удар
+TAG_STAMINA,Stamina,Выносливость
+TAG_VITAL,Vitality,Живучесть
+TAG_BLEED,Bleed,Кровотечение
+TAG_BURN,Burn,Ожог
+TAG_FROST,Frost,Холод
+TAG_SHOCK,Shock,Шок
+TAG_SOUL,Soul,Душа
+TAG_READ,Reading,Чтение
+TAG_FOCUS,Focus,Концентрация
+TAG_CURSE,Curse,Проклятие
+DOORS_PROGRESS,Room %d of %d,Комната %d из %d
+RUN_STATUS,HP %d/%d    Souls %d,Здоровье %d/%d    Души %d
+ROOM_FIGHT,Fight,Бой
+ROOM_ELITE,Elite,Элита
+ROOM_BOSS,Boss,Босс
+ROOM_ALTAR,Altar,Алтарь
+ROOM_SHOP,Shop,Лавка
+ROOM_BONFIRE,Bonfire,Костёр
+REWARD_SOULS,+%d Souls,+%d душ
+REWARD_HEAL,Heals %d%%,Лечение %d%%
+REWARD_RELIC,Relic offer,Выбор реликвии
+REWARD_SHOP,Wares,Товары
+PLACE_BONFIRE,Rest by the fire and mend your wounds.,Отдохните у огня и залечите раны.
+PLACE_REST,Rest (+%d HP),Отдохнуть (+%d здоровья)
+PLACE_SOON,Coming soon,Скоро
+SUMMARY_VICTORY,Realm cleared,Царство пройдено
+SUMMARY_DEATH,You have fallen,Вы пали
+SUMMARY_ABANDON,Run abandoned,Забег брошен
+SUMMARY_PROGRESS,"Realm %d of %d, rooms cleared: %d","Царство %d из %d, комнат пройдено: %d"
+SUMMARY_SOULS,Souls: %d,Души: %d
+SUMMARY_EMBERS,Embers gained: %d,Получено углей: %d
+SUMMARY_KILLER,Slain by %s,Убит: %s
+SUMMARY_SEED,Seed: %s,Зерно: %s
+SUMMARY_AGAIN,Again,Ещё раз
+SUMMARY_SAVE_HALF,Save half (watch ad),Сохранить половину (реклама)
+AFFIX_SWIFT,Swift,Стремительный
+AFFIX_PLATED,Plated,Бронированный
+EQUIP_BUCKLER,Buckler,Баклер
+EQUIP_BUCKLER_DESC,"Wide parry window, fast guard, but most of a hit leaks through.","Широкое окно парирования, быстрая защита, но много урона проходит."
+EQUIP_KITE_SHIELD,Kite Shield,Щит-капля
+EQUIP_KITE_SHIELD_DESC,Balanced guard with some resistance to guard breaks.,"Сбалансированный щит, частично защищает от пробития."
+EQUIP_TOWER_SHIELD,Tower Shield,Башенный щит
+EQUIP_TOWER_SHIELD_DESC,"Slow to raise, long guard, hardly any chip damage.","Медленно поднимается, долгая защита, почти нет урона сквозь блок."
+EQUIP_DAGGER,Dagger,Кинжал
+EQUIP_DAGGER_DESC,"Fast and cheap strikes, little damage.","Быстрые дешёвые удары, малый урон."
+EQUIP_SWORD,Sword,Меч
+EQUIP_SWORD_DESC,A dependable blade.,Надёжный клинок.
+EQUIP_GREATSWORD,Greatsword,Двуручный меч
+EQUIP_GREATSWORD_DESC,"Slow and costly, hits very hard.","Медленный и затратный, бьёт очень сильно."
+EQUIP_LIGHT_ARMOR,Light Armor,Лёгкая броня
+EQUIP_LIGHT_ARMOR_DESC,More stamina.,Больше выносливости.
+EQUIP_HEAVY_ARMOR,Heavy Armor,Тяжёлая броня
+EQUIP_HEAVY_ARMOR_DESC,"Takes 20% less damage, slower recovery.","Урон снижен на 20%, восстановление медленнее."
+RELIC_MENDERS_THREAD,Mender's Thread,Нить штопальщика
+RELIC_MENDERS_THREAD_DESC,"Heals on parry, twice as much on a perfect parry.","Лечит при парировании, вдвое больше при идеальном."
+RELIC_GLASS_BLADE,Glass Blade,Стеклянный клинок
+RELIC_GLASS_BLADE_DESC,"Deal more damage, take more damage.","Больше наносимого урона, больше получаемого."
+RELIC_COUNTER_TIDE,Counter Tide,Контрприлив
+RELIC_COUNTER_TIDE_DESC,A free riposte after every parry.,Бесплатный ответный удар после парирования.
+RELIC_PHOENIX_ASH,Phoenix Ash,Пепел феникса
+RELIC_PHOENIX_ASH_DESC,Survive a killing blow once per run.,Переживите смертельный удар один раз за забег.
+RELIC_OVERREACH,Overreach,Перенапряжение
+RELIC_OVERREACH_DESC,Stronger strikes at a higher stamina cost.,"Удары сильнее, но стоят больше выносливости."
+RELIC_DUELISTS_PRIDE,Duelist's Pride,Гордость дуэлянта
+RELIC_DUELISTS_PRIDE_DESC,A streak of parries raises your damage.,Серия парирований повышает урон.
+BATTLE_CRIT,CRIT!,КРИТ!
+HUD_SOULS,Souls,Души
+PAUSE_TITLE,Paused,Пауза
+PAUSE_RESUME,Resume,Продолжить
+PAUSE_SETTINGS,Settings,Настройки
+PAUSE_ABANDON,Abandon run,Бросить забег
+PAUSE_MENU,Main menu,Главное меню
+SHOP_ITEMS,Items,Предметы
+SHOP_LEVELS,Levels,Уровни
+SHOP_USE,Use,Применить
+GLYPH_MAX_HP,HP,ЗД
+GLYPH_MAX_STAMINA,ST,ВН
+GLYPH_ATTACK_DAMAGE,DMG,УР
+GLYPH_STAMINA_REGEN,REG,ВС
+GLYPH_FLASK,FL,ФЛ
+GLYPH_EMBER_BOMB,BMB,БМ
+GLYPH_WHETSTONE_OIL,OIL,МС
+GLYPH_WARDING_ASH,ASH,ПП
+ALTAR_HINT,Offer Souls to grow stronger for this run.,"Пожертвуйте души, чтобы стать сильнее в этом забеге."
+ALTAR_LEVEL,"%s: %s → %s  (%d souls)","%s: %s → %s  (%d душ)"
+ALTAR_BUFF,"%s: %s  (%d souls)","%s: %s  (%d душ)"
+ALTAR_LEAVE,Leave the altar,Уйти от алтаря
+REWARD_ALTAR,Upgrades for souls,Улучшения за души
+ALTAR_WATCH_AD,"  (watch ad)","  (смотреть рекламу)"
+AD_BADGE,AD,РЕК
+CROSSROADS_TITLE,The boss has fallen,Босс повержен
+CROSSROADS_HINT,"End the journey and keep every soul, or go deeper: enemies grow stronger, and death takes everything.","Завершите путешествие и сохраните все души — или идите глубже: враги станут сильнее, а смерть заберёт всё."
+CROSSROADS_RETIRE,End the journey (+%d embers),Завершить путешествие (+%d углей)
+CROSSROADS_DEEPER,Go deeper (depth %d),Идти глубже (глубина %d)

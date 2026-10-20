@@ -17,6 +17,12 @@ func entries(realm: RealmDefinition) -> Array[RealmEnemyEntry]:
 func heal_share(realm: RealmDefinition) -> float:
 	return realm.boss_heal_share
 
+func kind_hp_factor(curve: DepthCurve) -> float:
+	return curve.boss_hp_factor
+
+func kind_damage_factor(curve: DepthCurve) -> float:
+	return curve.boss_damage_factor
+
 func _rewards(run: Run, enemy: EnemyDefinition) -> Array[Dictionary]:
 	var list := super._rewards(run, enemy)
 	list.append({"id": &"relic_offer", "size": run.realm().altar_offer_size, "boss": true})

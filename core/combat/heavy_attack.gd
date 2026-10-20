@@ -9,7 +9,4 @@ func id() -> StringName:
 	return ID
 
 func on_blocked(duel: Duel, result: StrikeResult) -> void:
-	result.outcome = StrikeResult.HIT
-	result.damage = roundi(result.damage * duel.tuning.guard_break_damage_share)
-	result.stamina_cost = duel.player.max_stamina
-	result.guard_broken = true
+	guard_break(duel, result)

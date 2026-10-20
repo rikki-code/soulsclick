@@ -50,9 +50,9 @@ Then measure (day-1 return, rewarded per player) before adding content.
 
 Several schemes, picked in Settings (saved in the profile), all calling the same two actions:
 - **Hands** (default on touch): first-person view, the player's shield bottom-left and weapon bottom-right.
-  Tap the left half = block, right half = attack. No button UI; the hands show the equipped gear.
+  Hold the left half = block, tap the right half = attack. No button UI; the hands show the equipped gear.
 - **Buttons**: two big labeled buttons (current layout).
-- **Swipes**: swipe toward the enemy (up) = attack, swipe down = block; recognized on a short movement
+- **Swipes**: swipe toward the enemy (up) = attack, swipe down and keep the finger down = block; recognized on a short movement
   threshold, not on release, to keep latency low. Directional parry (swipe against the strike side)
   is a later idea that needs strike directions in core.
 Keyboard always works (Attack →/D/J, Block ←/A/F). Multitouch: both thumbs register.
@@ -72,4 +72,3 @@ Keyboard always works (Attack →/D/J, Block ←/A/F). Multitouch: both thumbs r
 ## Open questions (ask the user, do not decide alone)
 
 - Whether spells get their own button.
-- Hold-to-block vs tap-to-block (v0 assumes tap: block lasts `block_duration`).

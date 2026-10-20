@@ -156,7 +156,5 @@ First-person hands for the Hands input scheme. Canvas 1080x1920, same `rig.json`
   `tools/svg_to_png.gd`; `tools/rig_preview.py` does not know gear, do not use it here.
 - Add a shield/weapon: add a drawing function + `GEAR_K` scale + `GEAR_NOTES` entry in `_src/build.py`
   (`GEAR` dict, origin = grip point, shape upright), add the combo to `COMBOS`, run the build, look at the sheet.
-- Not done yet: no game-side loader (`HandsRig`); previews of block/parry for tower+greatsword and the
-  dagger/buckler sheets not reviewed after the last arm change; no hurt/parry shake tuning; no per-gear pose
-  offsets (tower block position is shared with the other shields); right-hand fist art is generic (no per-weapon
-  grip variations).
+- `gear.json` per-gear `pose_offsets` {pose id | "default": {move [x,y], rot}} (source: `POSE_OFFSETS` in `_src/build.py`): `move` slides the whole arm of that hand, `rot` turns the hand (and gear), added on top of the pose; used to sink shields at rest and tilt long blades outward off the edge (tower block/parry lowered so they do not hide the eyes). The game loader is `PlayerRigSpec` (see the battle skill); preview sheets apply the same offsets.
+- Not done yet: right-hand fist art is generic (no per-weapon grip variations); wrist cuff is a flat band wider than the bracer; no hurt/parry shake tuning.

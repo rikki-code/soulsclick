@@ -24,7 +24,17 @@
     625
    ],
    "glow": true,
-   "note": "medium; pivot at the grip behind the boss"
+   "note": "medium; pivot at the grip behind the boss",
+   "pose_offsets": {
+    "default": {
+     "move": [
+      0,
+      110
+     ]
+    },
+    "block": {},
+    "parry": {}
+   }
   },
   "tower": {
    "file": "shields/tower.svg",
@@ -37,7 +47,27 @@
     1049
    ],
    "glow": true,
-   "note": "huge; raised it hides the enemy from y~1010 down (eyes/head stay visible)"
+   "note": "huge; raised it hides the enemy from y~1010 down (eyes/head stay visible)",
+   "pose_offsets": {
+    "default": {
+     "move": [
+      0,
+      330
+     ]
+    },
+    "block": {
+     "move": [
+      0,
+      110
+     ]
+    },
+    "parry": {
+     "move": [
+      0,
+      250
+     ]
+    }
+   }
   }
  },
  "weapons": {
@@ -52,7 +82,14 @@
     552
    ],
    "glow": true,
-   "note": "short, fast"
+   "note": "short, fast",
+   "pose_offsets": {
+    "default": {
+     "rot": 30
+    },
+    "attack": {},
+    "staggered": {}
+   }
   },
   "sword": {
    "file": "weapons/sword.svg",
@@ -65,7 +102,14 @@
     1090
    ],
    "glow": true,
-   "note": "one-hand"
+   "note": "one-hand",
+   "pose_offsets": {
+    "default": {
+     "rot": 30
+    },
+    "attack": {},
+    "staggered": {}
+   }
   },
   "greatsword": {
    "file": "weapons/greatsword.svg",
@@ -78,7 +122,14 @@
     1488
    ],
    "glow": true,
-   "note": "two-hand length, blade reaches y~700 from idle"
+   "note": "two-hand length, blade reaches y~700 from idle",
+   "pose_offsets": {
+    "default": {
+     "rot": 36
+    },
+    "attack": {},
+    "staggered": {}
+   }
   }
  }
 }

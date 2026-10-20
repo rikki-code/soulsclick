@@ -51,10 +51,22 @@ After `from_dict` connect signals and call `resume()`. `SaveStore` wiring is the
   (kind:enemy:affix), shuffled. Preview data comes from `RoomKind.make_preview`.
 - `Omen.roll(seed)`: 2 omens of 2 tags (`Omen.TAGS`), `id` = sorted tags joined by `_`. Effects are read from `tags` later.
 
+## Endless depth and curve
+
+The run never ends on a boss win: after the last step `depth += 1`, `realm_index = depth % realms.size()`, `realm_started` fires again.
+`Run.depth` = realms completed, `Run.node_index` = rooms entered (current included), `Run.upcoming_node()` = 0-based ordinal of the room
+being chosen/played. RNG streams use `depth` (not `realm_index`), so cycled realms get fresh doors. Save keeps `depth`.
+`DepthCurve` (`data/realms/depth_curve.tres`, `RealmDefinition.depth_curve`): per node hp x `hp_growth`^node (1.12), damage x `damage_growth`^node,
+souls x `souls_growth`^node (1.08), elite/boss extra factors, `combat_level = depth + 1`; affix chances: normal fights roll one affix
+from `fight_affix_depth` (entry `affixes` in the fight pool), elites a second one from `double_affix_depth`. All fed into `RoomPlan`:
+`hp_multiplier`, `damage_multiplier`, `combat_level`, `affix_id` (first) + `affix_ids` (all), `depth`, `node`.
+The game must scale every enemy damage by `plan.damage_multiplier` (like hp by `hp_multiplier`) and apply each affix of `plan.affix_ids`.
+`RunSummary.depth_reached` (= `run.depth`) and `nodes_cleared` feed the profile's best depth. Run ends only by death or abandon.
+
 ## Ending
 
 `RunSummary` (`outcome_id` victory|death|abandon, realm_reached, step_reached, rooms_cleared, souls, bank_rate, embers,
-seed_code, omen_id, killer_enemy_id, history). Embers = floor(souls x rate): victory 1.0, death/abandon `death_bank_rate`.
+seed_code, omen_id, killer_enemy_id, history). Embers = floor(souls x rate): victory 1.0 (no longer reachable in endless), death/abandon `death_bank_rate`.
 Pure data: the game layer adds `embers` to the profile once. Victory bonus Embers: `VictoryOutcome.bonus_embers`.
 
 ## Add a room kind
@@ -67,7 +79,7 @@ Pure data: the game layer adds `embers` to the profile once. Victory bonus Ember
 ## Add a realm
 
 Copy `data/realms/realm_1.tres`, change pools, steps, boss, add the path to `RealmCatalog.PATHS`, add its `name_key` to the locale
-CSV. A run plays the realms in `PATHS` order; the last boss ends it with victory.
+CSV. A run plays the realms in `PATHS` order and then cycles (endless).
 
 ## Extension points (Modifier system, not implemented)
 
@@ -81,3 +93,7 @@ A future `ModifierHost` hangs there; `modify_offer` belongs where relic offers a
 godot --headless --path . -s tests/run_test.gd    # exit 0/1
 ```
 Rebuild the class cache after adding a `class_name` file: `--headless --path . --editor --quit-after 3`.
+
+## Game layer wiring (G1)
+
+`GameRoot` owns the `Run` and drives screens from `run.phase` (`view/run/`: `OmenScreen`, `DoorsScreen`, `PlacePanel` for bonfire/shop/altar placeholders, `SummaryScreen`). Fight rooms build the player with `PlayerBuilder` (kite_shield + sword, permanent levels, run levels), `Duel(tuning, plan.enemy, plan.combat_seed, plan.combat_level, player)`, affix modifier and `hp_multiplier` on the enemy; death -> rewarded `Duel.revive_player` once per run, else `RoomResult.defeat()`. Save envelope `user://run.json` = `{run, levels (run StatLevels), revive_used}` via `SaveStore.save_run/load_run/delete_run` at every doors/room boundary; deleted when the run ends. Death banks 0% (`RunConfig.death_bank_rate`); the summary's rewarded "save half" adds 50%. Run levels are bought in battle: `GameRoot._on_buy_level_requested` (hook for `BattleView.buy_level_requested`; items/shop wiring is a TODO in `_sync_view_shop`). Dev: `-- --screen=<doors|fight>`.

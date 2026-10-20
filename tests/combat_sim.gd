@@ -5,6 +5,14 @@ const DT := 1.0 / 60.0
 const MAX_DUEL_SECONDS := 180.0
 const DEFAULT_RUNS := 200
 const TUNING_PATH := "res://data/tuning/default_tuning.tres"
+const EQUIPMENT_PATH := "res://data/equipment/%s.tres"
+## weapon, shield: the three loadout archetypes plus the unequipped baseline.
+const LOADOUTS := [
+	["none", "", ""],
+	["buckler+dagger", "dagger", "buckler"],
+	["kite+sword", "sword", "kite_shield"],
+	["tower+greatsword", "greatsword", "tower_shield"],
+]
 const ENEMY_PATHS := [
 	"res://data/enemies/grunt.tres",
 	"res://data/enemies/knight.tres",
@@ -35,6 +43,7 @@ class RandomBot extends Bot:
 			duel.perform_attack()
 		if _rng.randf() < block_chance:
 			duel.perform_block()
+			duel.perform_block_release()
 
 ## Reads telegraphs, presses block so the strike lands inside the parry window (plus timing noise),
 ## attacks whenever that cannot collide with a pending parry.
@@ -52,7 +61,9 @@ class ParryBot extends Bot:
 		duel.strike_resolved.connect(_on_strike)
 
 	func _on_telegraph(_kind_id: StringName, duration: float, _index: int, duel: Duel) -> void:
-		_press_at = duel.time + duration - duel.tuning.parry_window * 0.5 + _rng.randfn(0.0, noise)
+		var stats := duel.player.stats
+		var lead := stats.value(CombatStats.BLOCK_STARTUP) + stats.value(CombatStats.PARRY_WINDOW) * 0.5
+		_press_at = duel.time + duration * duel.enemy.stats.value(CombatStats.TELEGRAPH_SCALE) - lead + _rng.randfn(0.0, noise)
 
 	func _on_strike(_result: StrikeResult) -> void:
 		_press_at = -1.0
@@ -61,9 +72,10 @@ class ParryBot extends Bot:
 		if _press_at >= 0.0 and duel.time >= _press_at:
 			_press_at = -1.0
 			duel.perform_block()
+			duel.perform_block_release()
 			return
-		var safe := _press_at < 0.0 or duel.time + duel.tuning.attack_duration + 0.05 < _press_at
-		if safe:
+		var safe := _press_at < 0.0 or duel.time + duel.player.stats.value(CombatStats.ATTACK_LOCK) + 0.05 < _press_at
+		if safe and not duel.player.state is BlockingState:
 			duel.perform_attack()
 
 func _initialize() -> void:
@@ -78,14 +90,28 @@ func _initialize() -> void:
 		_report(tuning, definition, "sloppy bot (noise 0.12s)", func() -> Bot: return ParryBot.new(0.12), runs)
 		_report(tuning, definition, "random bot", func() -> Bot: return RandomBot.new(0.03, 0.03), runs)
 		_report(tuning, definition, "masher bot", func() -> Bot: return RandomBot.new(1.0, 0.0), runs)
+	for entry in LOADOUTS:
+		for path in ENEMY_PATHS:
+			var definition := load(path) as EnemyDefinition
+			var loadout := _loadout(entry[1], entry[2])
+			_report(tuning, definition, "%s parry 0.05" % entry[0], func() -> Bot: return ParryBot.new(0.05), runs, loadout)
+			_report(tuning, definition, "%s sloppy 0.12" % entry[0], func() -> Bot: return ParryBot.new(0.12), runs, loadout)
 	quit()
 
-func _report(tuning: CombatTuning, definition: EnemyDefinition, label: String, make_bot: Callable, runs: int) -> void:
+func _loadout(weapon_id: String, shield_id: String) -> Loadout:
+	var weapon := load(EQUIPMENT_PATH % weapon_id) as Equipment if weapon_id != "" else null
+	var shield := load(EQUIPMENT_PATH % shield_id) as Equipment if shield_id != "" else null
+	return Loadout.of(weapon, shield)
+
+func _report(tuning: CombatTuning, definition: EnemyDefinition, label: String, make_bot: Callable, runs: int, loadout: Loadout = null) -> void:
 	var wins := 0
 	var total_time := 0.0
 	var win_hp := 0.0
 	for run in runs:
-		var duel := Duel.new(tuning, definition, run + 1)
+		var player := Fighter.make_player(tuning)
+		if loadout != null:
+			loadout.apply_to(player)
+		var duel := Duel.new(tuning, definition, run + 1, 1, player)
 		var bot := make_bot.call() as Bot
 		var bot_rng := RandomNumberGenerator.new()
 		bot_rng.seed = run + 100000

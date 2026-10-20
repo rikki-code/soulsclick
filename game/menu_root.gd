@@ -19,46 +19,43 @@ func _ready() -> void:
 
 func _show_main() -> void:
 	var page := _new_page(tr("GAME_TITLE"))
-	MenuKit.button(page, tr("MENU_PLAY"), SceneRouter.to_game)
+	page.add_child(MenuKit.label(tr("EMBERS_LINE") % GameSession.profile().embers, 40))
+	if SaveStore.has_run():
+		MenuKit.button(page, tr("MENU_CONTINUE_RUN"), _start_game.bind(GameSession.Launch.CONTINUE_RUN))
+	MenuKit.button(page, tr("MENU_NEW_RUN"), _start_game.bind(GameSession.Launch.NEW_RUN))
+	MenuKit.button(page, tr("MENU_UPGRADES"), _show_upgrades)
 	MenuKit.button(page, tr("MENU_SETTINGS"), _show_settings)
 	if not OS.has_feature("web"):
 		MenuKit.button(page, tr("MENU_QUIT"), func() -> void: get_tree().quit())
 
-func _show_settings() -> void:
-	var page := _new_page(tr("SETTINGS_TITLE"))
-	SoundSettings.add_to(page)
-	_add_language_row(page)
-	_add_controls_row(page)
+func _start_game(launch: GameSession.Launch) -> void:
+	GameSession.launch = launch
+	SceneRouter.to_game()
+
+## Permanent levels bought with Embers: HP, stamina, damage, stamina regen.
+func _show_upgrades() -> void:
+	var page := _new_page(tr("UPGRADES_TITLE"))
+	var profile := GameSession.profile()
+	var table := GameSession.permanent_table()
+	page.add_child(MenuKit.label(tr("EMBERS_LINE") % profile.embers, 40))
+	var levels := profile.permanent(table)
+	for stat in table.stat_ids():
+		var def := table.def_of(stat)
+		var cost := levels.cost_of(stat)
+		var button := MenuKit.button(page, tr("UPGRADES_ROW") % [RunScreen.stat_name(stat), RunScreen.stat_text(def.increment), levels.level_of(stat), cost], _buy_upgrade.bind(stat))
+		button.custom_minimum_size.y = 130.0
+		button.disabled = cost > profile.embers
 	MenuKit.button(page, tr("MENU_BACK"), _show_main)
 
-func _add_language_row(page: Control) -> void:
-	var codes := LanguageSettings.codes()
-	var names: Array[String] = []
-	for code in codes:
-		names.append(LanguageSettings.label_for(code, tr("LANGUAGE_AUTO")))
-	var option := MenuKit.option(names, codes.find(GameSession.profile().language))
-	option.item_selected.connect(func(index: int) -> void: _on_language_picked(codes[index]))
-	page.add_child(MenuKit.row(tr("SETTINGS_LANGUAGE"), option))
+func _buy_upgrade(stat: StringName) -> void:
+	if GameSession.profile().buy_level(GameSession.permanent_table(), stat):
+		GameSession.save_profile()
+		Audio.play(&"souls_gain")
+	_show_upgrades()
 
-func _add_controls_row(page: Control) -> void:
-	var ids := InputSchemeCatalog.ids()
-	var names: Array[String] = []
-	for id in ids:
-		names.append(tr(InputSchemeCatalog.label_key(id)))
-	var current := InputSchemeCatalog.resolve(GameSession.profile().input_scheme)
-	var option := MenuKit.option(names, ids.find(current))
-	option.item_selected.connect(func(index: int) -> void: _on_controls_picked(ids[index]))
-	page.add_child(MenuKit.row(tr("SETTINGS_CONTROLS"), option))
-
-func _on_controls_picked(id: StringName) -> void:
-	GameSession.profile().input_scheme = String(id)
-	GameSession.save_profile()
-
-func _on_language_picked(code: String) -> void:
-	GameSession.profile().language = code
-	GameSession.save_profile()
-	LanguageSettings.apply(code)
-	_show_settings.call_deferred()
+func _show_settings() -> void:
+	var page := _new_page(tr("SETTINGS_TITLE"))
+	SettingsPage.add_to(page, _show_main, _show_settings)
 
 func _new_page(title: String) -> VBoxContainer:
 	for child in _content.get_children():

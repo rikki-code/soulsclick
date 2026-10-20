@@ -22,8 +22,9 @@ static func resolve(saved_id: String) -> StringName:
 	var id := StringName(saved_id)
 	return id if has(id) else default_id()
 
-static func make(id: StringName) -> InputScheme:
-	return _factories()[resolve(String(id))].call()
+## `loadout` (PlayerLoadoutView) is what the hands (every scheme) show the player holding; null = defaults.
+static func make(id: StringName, loadout: PlayerLoadoutView = null) -> InputScheme:
+	return _factories()[resolve(String(id))].call(loadout)
 
 static func label_key(id: StringName) -> String:
 	return "CONTROLS_%s" % String(id).to_upper()
@@ -35,4 +36,8 @@ static func is_touch_device() -> bool:
 	return DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios")
 
 static func _factories() -> Dictionary:
-	return {&"hands": HandsScheme.new, &"buttons": ButtonsScheme.new, &"swipes": SwipeScheme.new}
+	return {
+		&"hands": func(loadout: PlayerLoadoutView) -> InputScheme: return HandsScheme.new(loadout),
+		&"buttons": func(loadout: PlayerLoadoutView) -> InputScheme: return ButtonsScheme.new(loadout),
+		&"swipes": func(loadout: PlayerLoadoutView) -> InputScheme: return SwipeScheme.new(loadout),
+	}

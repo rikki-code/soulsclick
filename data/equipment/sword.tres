@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Equipment" format=3]
+
+[ext_resource type="Script" path="res://core/combat/equipment.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/equipment_stat.gd" id="2"]
+
+[sub_resource type="Resource" id="s0"]
+script = ExtResource("2")
+stat = &"attack_damage"
+stage = 1
+amount = 1.1
+
+[resource]
+script = ExtResource("1")
+id = &"sword"
+name_key = "EQUIP_SWORD"
+desc_key = "EQUIP_SWORD_DESC"
+slot = &"weapon"
+stats = Array[ExtResource("2")]([SubResource("s0")])

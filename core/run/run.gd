@@ -15,7 +15,7 @@ signal omen_chosen(omen: Omen)
 signal realm_started(realm_index: int, realm_id: StringName, step_count: int)
 signal doors_offered(offer: DoorOffer)
 signal room_entered(plan: RoomPlan)
-## `record` keys: realm, step, kind, variant, affix, door, souls_gained, hp_after.
+## `record` keys: realm, depth, step, kind, variant, affix, door, souls_gained, hp_after.
 signal room_completed(record: Dictionary)
 signal hp_changed(hp: int, max_hp: int, delta: int)
 signal souls_changed(souls: int, delta: int)
@@ -24,6 +24,8 @@ signal run_ended(summary: RunSummary)
 var config: RunConfig
 var realms: Array[RealmDefinition] = []
 var phase: StringName = PHASE_OMEN
+## Endless: realms completed so far (0-based); `realm_index` is the cycled definition it plays.
+var depth := 0
 var realm_index := 0
 var step_index := 0
 var hp := 0
@@ -37,6 +39,11 @@ var summary: RunSummary
 var killer_enemy_id: StringName = &""
 var _outcome_id: StringName = &""
 
+## Rooms entered so far, the current one included.
+var node_index: int:
+	get:
+		return history.size() + (1 if phase == PHASE_ROOM else 0)
+
 func _init(p_config: RunConfig, p_realms: Array[RealmDefinition]) -> void:
 	config = p_config
 	realms = p_realms
@@ -46,6 +53,13 @@ func _init(p_config: RunConfig, p_realms: Array[RealmDefinition]) -> void:
 
 func realm() -> RealmDefinition:
 	return realms[mini(realm_index, realms.size() - 1)]
+
+func curve() -> DepthCurve:
+	return realm().curve()
+
+## 0-based ordinal of the room being chosen or played: the `node` the curve is evaluated at.
+func upcoming_node() -> int:
+	return history.size()
 
 func is_ended() -> bool:
 	return phase == PHASE_ENDED
@@ -89,7 +103,7 @@ func complete_room(result: RoomResult) -> bool:
 	var souls_before := souls
 	RoomKindCatalog.get_kind(entered.kind_id).complete(self, entered, result)
 	var record := {
-		"realm": entered.realm_index, "step": entered.step_index, "kind": entered.kind_id,
+		"realm": entered.realm_index, "depth": entered.depth, "step": entered.step_index, "kind": entered.kind_id,
 		"variant": entered.door.variant, "affix": entered.affix_id, "door": entered.door_index,
 		"souls_gained": souls - souls_before, "hp_after": hp,
 	}
@@ -104,6 +118,15 @@ func abandon() -> void:
 	if phase != PHASE_ENDED:
 		_end(AbandonOutcome.ABANDON_ID)
 
+## True right after a boss: a new realm begins and the player may end the journey instead of going deeper.
+func at_crossroads() -> bool:
+	return phase == PHASE_DOORS and depth > 0 and step_index == 0
+
+## Ends the journey at the crossroads as a victory: every Soul becomes an Ember.
+func retire() -> void:
+	if at_crossroads():
+		_end(VictoryOutcome.ID)
+
 func add_souls(amount: int) -> void:
 	var before := souls
 	souls = maxi(souls + amount, 0)
@@ -116,7 +139,7 @@ func heal(amount: int) -> void:
 func to_dict() -> Dictionary:
 	return {
 		"version": VERSION, "config": config.to_dict(), "phase": phase,
-		"realm": realm_index, "step": step_index, "hp": hp, "souls": souls,
+		"depth": depth, "realm": realm_index, "step": step_index, "hp": hp, "souls": souls,
 		"omen": omen_choices.find(omen) if omen != null else NO_CHOICE,
 		"history": history, "door": plan.door_index if plan != null else NO_CHOICE,
 		"outcome": _outcome_id, "killer": killer_enemy_id,
@@ -128,7 +151,8 @@ static func from_dict(data: Dictionary, p_realms: Array[RealmDefinition]) -> Run
 		return null
 	var run := Run.new(RunConfig.from_dict(data["config"]), p_realms)
 	run.phase = StringName(data.get("phase", PHASE_OMEN))
-	run.realm_index = clampi(int(data.get("realm", 0)), 0, p_realms.size() - 1)
+	run.depth = maxi(int(data.get("depth", data.get("realm", 0))), 0)
+	run.realm_index = run.depth % p_realms.size()
 	run.step_index = clampi(int(data.get("step", 0)), 0, run.realm().step_count())
 	run.hp = clampi(int(data.get("hp", run.config.max_hp)), 0, run.config.max_hp)
 	run.souls = maxi(int(data.get("souls", 0)), 0)
@@ -166,7 +190,7 @@ static func _clean_record(record: Dictionary) -> Dictionary:
 	var clean := record.duplicate()
 	for key in ["kind", "variant", "affix"]:
 		clean[key] = StringName(clean.get(key, ""))
-	for key in ["realm", "step", "door", "souls_gained", "hp_after"]:
+	for key in ["realm", "depth", "step", "door", "souls_gained", "hp_after"]:
 		clean[key] = int(clean.get(key, 0))
 	return clean
 
@@ -185,10 +209,8 @@ func _advance() -> void:
 	if step_index < realm().step_count():
 		_offer_doors()
 		return
-	if realm_index + 1 >= realms.size():
-		_end(VictoryOutcome.ID)
-		return
-	realm_index += 1
+	depth += 1
+	realm_index = depth % realms.size()
 	_begin_realm()
 
 func _set_hp(value: int) -> void:

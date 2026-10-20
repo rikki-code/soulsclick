@@ -1,4 +1,4 @@
-## Dev-only: `-- --shot=<png path> --shot-at=<seconds> [--enemy=<id>] [--scheme=<id>] [--act=<attack|block>]` saves the
+## Dev-only: `-- --shot=<png path> --shot-at=<seconds> [--enemy=<id>] [--scheme=<id>] [--gear=<shield>,<weapon>] [--act=<attack|block>]` saves the
 ## viewport and quits; --act sends that action 0.35 s before the shot. Does nothing without the shot flag.
 class_name DevShot
 extends Node
@@ -9,6 +9,7 @@ const SHOT_FLAG := "--shot="
 const AT_FLAG := "--shot-at="
 const ENEMY_FLAG := "--enemy="
 const SCHEME_FLAG := "--scheme="
+const GEAR_FLAG := "--gear="
 const ACT_FLAG := "--act="
 const ACT_LEAD := 0.35
 const DEFAULT_AT := 2.0
@@ -31,6 +32,9 @@ static func install(parent: Node) -> DevShot:
 			shot._at = float(arg.trim_prefix(AT_FLAG))
 		elif arg.begins_with(SCHEME_FLAG):
 			scheme_override = arg.trim_prefix(SCHEME_FLAG)
+		elif arg.begins_with(GEAR_FLAG):
+			var ids := arg.trim_prefix(GEAR_FLAG).split(",")
+			PlayerLoadoutView.dev_loadout = PlayerLoadoutView.from_equipment(StringName(ids[0]), StringName(ids[ids.size() - 1]))
 		elif arg.begins_with(ACT_FLAG):
 			shot._act = arg.trim_prefix(ACT_FLAG)
 		elif arg.begins_with(ENEMY_FLAG):

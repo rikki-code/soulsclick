@@ -15,5 +15,5 @@ func id() -> StringName:
 func duration() -> float:
 	return _duration
 
-func damage_taken_multiplier(tuning: CombatTuning) -> float:
-	return tuning.punish_multiplier
+func damage_taken_multiplier(attacker_stats: CombatStats) -> float:
+	return attacker_stats.value(CombatStats.PUNISH_MULT)

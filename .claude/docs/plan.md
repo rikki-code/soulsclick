@@ -21,10 +21,10 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
       of colored polygons with tweened poses and weapon glow per attack kind (see architecture "Enemy
       visuals"), telegraph indicator, HP/stamina bars, Attack/Block buttons plus keys, victory/death
       overlays, souls reward saved to profile, revive via `Platform.show_rewarded()`.
-- [ ] T5 Integration check: headless check clean, all tests pass, portrait and landscape screenshots, web
+- [~] T5 Integration check: headless check clean, all tests pass, portrait and landscape screenshots, web
       export builds locally.
 
-- [ ] T6 Stats from loadout (`core/combat/`, `data/equipment/`; after designer's `design/core_hooks.md`):
+- [x] T6 Stats from loadout (`core/combat/`, `data/equipment/`; after designer's `design/core_hooks.md`):
       `CombatStats` + `StatModifier`, `Equipment` Resources (weapon, shield, armor), `Duel` reads
       `fighter.stats` only; `CombatTuning` keeps defaults; 2–3 shields/weapons as data; sim per loadout.
       Merge with the item hooks from the design so items and equipment use one modifier pipeline.
@@ -44,6 +44,13 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
       embers to profile.
 - [ ] Tuning pass through bot simulations (win rate per enemy for a "good" and a "bad" bot).
 - [ ] First enemy pack with SVG silhouette parts, VFX pool, parry clang and hit sounds.
+
+- [~] E1 Endless depth in core/run (realm loop, exponential scaling, best depth).
+- [~] M1 Path visualization on the doors screen.
+- [ ] W1 Waves: several enemies per fight room (after E1).
+- [x] R2 Revive per fight with escalating ads, ad for missing souls, flask drinks on buy.
+- [ ] R3 Run rewards after elites/bosses (+flask, +max HP...).
+- [ ] W2 Two enemies at once for deep realms (later).
 
 ## Phase 2: release slice
 
@@ -75,3 +82,16 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
 - I1 done (hands/buttons/swipes, multitouch, settings, hints). Not done: gear from `gear.json` not attached
   to the hands, hands layout approximate (`HandsScheme.RESERVED_SHARE`), landscape hands layout, see
   `.claude/skills/battle/SKILL.md` "Not done yet".
+- T5: export filters done and verified on an exported pck (2.8 MB, rig/gear json in, no scratch dirs);
+  `import_etc2_astc=true` added (CI failed without it). Local full export blocked: editor 4.7.2 custom
+  build, no matching templates (`4.7.2.stable/`, web_nothreads_*). Web build check goes through CI.
+- 2026-10-20 evening: T6 done (modifiers, equipment, hold/tap block, strike_timing, revive_player);
+  gear on hands + parry ring done; game_root wired (block release, strike_timing, start loadout kite+sword
+  as consts until vessels). Revive in game_root still rebuilds the Duel (switch to `revive_player` in G1).
+  Next: D1, G1. Locale keys EQUIP_*, RELIC_*, AFFIX_* still missing.
+- 2026-10-20 night: done and wired in game_root: G1 run flow (omen/doors/rooms/summary, run save incl. inventory,
+  revive_player, 0% bank + ad saves half, permanent upgrades screen), C1 tempo/combo/stat levels, C2 items
+  (flask, ember_bomb, whetstone_oil, warding_ash), battle: combo/crit numbers, pause (stops duel clock; Settings
+  button in pause does nothing yet), side shop (items + run levels, souls income per hit/parry), branding
+  (icon, logos, store covers). Not played through by hand yet. Next: playtest + balance (numbers ×10 idea),
+  pause → settings, D1 data for hound/dancer/bulwark.

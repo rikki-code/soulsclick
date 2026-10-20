@@ -20,6 +20,9 @@ var stamina_cost := 0.0
 var staggers_attacker := false
 ## Heavy strike that went through a plain block.
 var guard_broken := false
+## 0..1 position inside the parry window (1 = last instant); perfect = at or above perfect_threshold.
+var precision := 0.0
+var perfect := false
 
 func _init(p_kind_id: StringName, p_index: int, p_count: int, p_damage: int) -> void:
 	kind_id = p_kind_id

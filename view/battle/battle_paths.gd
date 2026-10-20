@@ -13,5 +13,8 @@ static func rig_json(enemy_id: StringName) -> String:
 static func hands_rig_json() -> String:
 	return "%shands/%s" % [PLAYER_PACK, RIG_FILE]
 
+static func gear_json() -> String:
+	return "%sgear.json" % PLAYER_PACK
+
 static func background(enemy_id: StringName) -> String:
 	return "%s%s.svg" % [BACKGROUND_PACK, enemy_id]

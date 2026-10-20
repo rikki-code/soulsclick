@@ -12,9 +12,80 @@ const SHIELD_ARM_AT := Vector2(220, 768)
 const WEAPON_ARM_AT := Vector2(804, 768)
 const ARM_LENGTH := 240.0
 
-static func load_hands() -> RigSpec:
+const SHIELD_SLOT := &"shield"
+const WEAPON_SLOT := &"weapon"
+## Root arm each gear's pose offsets move (the shoulder slides the whole arm chain).
+const SLOT_ARMS := {SHIELD_SLOT: &"arm_l", WEAPON_SLOT: &"arm_r"}
+const POSE_DEFAULT := "default"
+const SLOT_KINDS := {SHIELD_SLOT: "shields", WEAPON_SLOT: "weapons"}
+
+static func load_hands(loadout: PlayerLoadoutView = null) -> RigSpec:
 	var spec := RigSpec.from_file(BattlePaths.hands_rig_json())
-	return spec if spec != null else _placeholder()
+	if spec == null:
+		return _placeholder()
+	var gear: Variant = JSON.parse_string(FileAccess.get_file_as_string(BattlePaths.gear_json()))
+	if gear is Dictionary:
+		var chosen := PlayerLoadoutView.resolve(loadout)
+		_attach(spec, gear, SHIELD_SLOT, chosen.shield_id)
+		_attach(spec, gear, WEAPON_SLOT, chosen.weapon_id)
+	return spec
+
+static func gear_part_id(slot_id: StringName) -> StringName:
+	return StringName("gear_%s" % slot_id)
+
+## Bounding box (canvas pixels) of one part's art in a pose, from the same transform chain the rig plays
+## (node origin = pivot, position = at + move - parent pivot). Empty Rect2 for polygon placeholders.
+static func part_rect(spec: RigSpec, part_id: StringName, pose_id: StringName) -> Rect2:
+	var part := spec.part_by_id(part_id)
+	if part.is_empty() or part.has("polygon"):
+		return Rect2()
+	var texture := EnemyRig.load_texture(_texture_path(spec, part))
+	if texture == null:
+		return Rect2()
+	var world := _world(spec, part_id, spec.pose_for(pose_id))
+	var art := Rect2(-part["pivot"], texture.get_size())
+	var corners := [art.position, Vector2(art.end.x, art.position.y), art.end, Vector2(art.position.x, art.end.y)]
+	var result := Rect2(world * corners[0], Vector2.ZERO)
+	for corner: Vector2 in corners:
+		result = result.expand(world * corner)
+	return result
+
+static func _texture_path(spec: RigSpec, part: Dictionary) -> String:
+	var file: String = part["file"]
+	return file if file.begins_with("res://") else spec.dir + file
+
+static func _world(spec: RigSpec, part_id: StringName, pose: Dictionary) -> Transform2D:
+	var part := spec.part_by_id(part_id)
+	var entry: Dictionary = pose.get(part_id, {})
+	var parent_pivot := Vector2.ZERO
+	var parent_world := Transform2D.IDENTITY
+	if part["parent"] != &"":
+		parent_pivot = spec.part_by_id(part["parent"])["pivot"]
+		parent_world = _world(spec, part["parent"], pose)
+	var local := Transform2D(deg_to_rad(entry.get("rot", 0.0)), part["at"] + entry.get("move", Vector2.ZERO) - parent_pivot)
+	return parent_world * local
+
+## Adds the gear sprite as a child of the slot's hand (its grip pivot sits on the slot point, it turns with the
+## hand) and applies the gear's optional `pose_offsets` {pose id | "default": {move, rot}} on top of each pose:
+## `move` slides the root arm of that hand (the whole arm), `rot` turns the hand (and so the gear).
+static func _attach(spec: RigSpec, gear: Dictionary, slot_id: StringName, gear_id: StringName) -> void:
+	var entry: Variant = gear.get(SLOT_KINDS[slot_id], {}).get(String(gear_id))
+	if not entry is Dictionary or not spec.slots.has(slot_id):
+		push_warning("PlayerRigSpec: unknown %s '%s'" % [slot_id, gear_id])
+		return
+	var slot: Dictionary = spec.slots[slot_id]
+	spec.parts.append({
+		"id": gear_part_id(slot_id), "file": BattlePaths.PLAYER_PACK + entry["file"], "parent": slot["parent"],
+		"pivot": RigSpec.to_vec(entry["pivot"]), "at": slot["at"], "z": slot["z"],
+	})
+	var offsets: Dictionary = entry.get("pose_offsets", {})
+	for pose_id: StringName in spec.poses:
+		var offset: Dictionary = offsets.get(String(pose_id), offsets.get(POSE_DEFAULT, {}))
+		var pose: Dictionary = spec.poses[pose_id]
+		if offset.has("move") and pose.has(SLOT_ARMS[slot_id]):
+			pose[SLOT_ARMS[slot_id]]["move"] += RigSpec.to_vec(offset["move"])
+		if offset.has("rot") and pose.has(slot["parent"]):
+			pose[slot["parent"]]["rot"] += float(offset["rot"])
 
 static func _placeholder() -> RigSpec:
 	var spec := RigSpec.new()

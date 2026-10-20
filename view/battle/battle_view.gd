@@ -6,13 +6,21 @@ extends Control
 signal continue_pressed
 signal revive_pressed
 signal menu_pressed
+signal pause_requested
+signal resume_requested
+signal abandon_requested
+signal menu_requested
+signal settings_requested
+signal buy_item_requested(item_id: StringName)
+signal buy_level_requested(stat_id: StringName)
+signal use_item_requested(item_id: StringName)
 
 const BG_SIZE := Vector2(1080, 1920)
 const BG_GROUND_Y := 1500.0
 const RIG_ORIGIN_IN_BG := Vector2(28, 560)
 const RIG_FEET_Y := 975.0
 const RIG_INK_HEIGHT := 915.0
-const LANDSCAPE_INK_SHARE := 0.66
+const LANDSCAPE_INK_SHARE := 0.76
 const PORTRAIT_MAX_RIG_SCALE := 1.3
 const BG_BELOW_GROUND := 420.0
 const MARGIN_SHARE := 0.04
@@ -29,6 +37,17 @@ const HINT_FONT := 44
 const HINT_SECONDS := 5.0
 const HINT_FADE := 0.6
 const HINT_WIDTH_SHARE := 0.8
+const LANDSCAPE_HINT_WIDTH_SHARE := 0.22
+const LANDSCAPE_HINT_Y_SHARE := 0.16
+const LANDSCAPE_HINT_HEIGHT := 300.0
+const RING_SCALE_REF := 1704.0
+const RING_SCALE_MIN := 0.7
+const RING_SCALE_MAX := 1.3
+const TELL_FLASH_ALPHA := 0.12
+const TELL_FLASH_SECONDS := 0.12
+const TICK_PITCH := 2.0
+const TICK_DB := -4.0
+const DEFAULT_PARRY_WINDOW := 0.25
 const HIT_NUMBER_LIFT := 70.0
 const STRIKE_SECONDS := 0.09
 const RECOVER_SECONDS := 0.4
@@ -41,6 +60,28 @@ const PARRY_COLOR := Color(1.0, 0.95, 0.7)
 const HIT_COLOR := Color(1.0, 0.25, 0.2)
 const BLOCK_COLOR := Color(0.7, 0.85, 1.0)
 const PUNISH_COLOR := Color(1.0, 0.85, 0.2)
+const CRIT_TEXT := "CRIT!"
+const PAUSE_BUTTON_SIZE := 76.0
+const SOULS_FONT := 34
+const SOULS_COLOR := Color(1.0, 0.82, 0.3)
+const SOULS_ROLL_SECONDS := 0.5
+const SOULS_FLY_SECONDS := 0.7
+const SHOP_TOP_GAP := 20.0
+## Portrait: the combo readout shifts left of the shop button column.
+const SHOP_COLUMN_CLEARANCE := 110.0
+const COMBO_MIN_SHOWN := 2
+const COMBO_BOX := Vector2(300, 150)
+const COMBO_COUNT_FONT := 84
+const COMBO_MULT_FONT := 40
+const COMBO_PUNCH := 0.35
+const COMBO_COLD := Color.WHITE
+const COMBO_WARM := Color(1.0, 0.7, 0.2)
+const COMBO_HOT := Color(1.0, 0.2, 0.15)
+const COMBO_HOT_MULT := 3.0
+const HITSTOP_SECONDS := 0.04
+const HITSTOP_COMBO := 8
+const HITSTOP_SCALE := 0.05
+const CRIT_SPARK_COLOR := Color(1.0, 0.85, 0.2)
 const BACK_GRADIENT_TOP := Color(0.1, 0.08, 0.12)
 const BACK_GRADIENT_BOTTOM := Color(0.03, 0.03, 0.04)
 const LOCK_COLORS := {&"attacking": Color(0.95, 0.6, 0.2), &"blocking": Color(0.4, 0.7, 1.0), &"staggered": Color(0.9, 0.2, 0.2)}
@@ -71,6 +112,26 @@ var _scheme: InputScheme
 var _hint := Label.new()
 var _hint_tween: Tween
 var _hit_point := Vector2.ZERO
+var _ring := ParryRing.new()
+var _combo_box := Control.new()
+var _combo_count := Label.new()
+var _combo_mult := Label.new()
+var _combo_tween: Tween
+var _combo_last := 0
+var _combo_home := Vector2.ZERO
+var _pending_number := -1
+var _hitstop_active := false
+var _pause_button := Button.new()
+var _pause_menu := PauseMenu.new()
+var _shop := ShopPanel.new()
+var _souls_label := Label.new()
+var _souls_target := 0
+var _souls_shown := 0
+var _souls_tween: Tween
+var _paused := false
+var _finished := false
+## Parry window length (s) used when the duel gives no strike_timing; set from the tuning by the composition root.
+var parry_window := DEFAULT_PARRY_WINDOW
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -88,12 +149,24 @@ func _ready() -> void:
 	_hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_hud_layer.add_child(_hud)
 	_build_hud()
+	_ring.anchor = _weapon_point
+	_ring.window_opened.connect(_on_parry_window_opened)
+	_hud_layer.add_child(_ring)
 	var fx_layer := CanvasLayer.new()
 	fx_layer.layer = 3
 	add_child(fx_layer)
 	fx_layer.add_child(_fx)
 	_fx.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fx.setup(_stage)
+	var pause_layer := CanvasLayer.new()
+	pause_layer.layer = 5
+	pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(pause_layer)
+	pause_layer.add_child(_pause_menu)
+	_pause_menu.resume_requested.connect(close_pause)
+	_pause_menu.settings_requested.connect(settings_requested.emit)
+	_pause_menu.abandon_requested.connect(abandon_requested.emit)
+	_pause_menu.menu_requested.connect(menu_requested.emit)
 	var overlay_layer := CanvasLayer.new()
 	overlay_layer.layer = 4
 	add_child(overlay_layer)
@@ -115,6 +188,11 @@ func begin(definition: EnemyDefinition, enemy: Fighter, player: Fighter) -> void
 	_kill(_lock_tween)
 	_telegraph_bar.visible = false
 	_lock_bar.visible = false
+	_ring.stop()
+	_combo_last = 0
+	_finished = false
+	_kill(_combo_tween)
+	_combo_box.modulate.a = 0.0
 	_enemy_name.text = tr(definition.name_key)
 	_enemy_bar.set_values(enemy.hp, enemy.max_hp, false)
 	_player_bar.set_values(player.hp, player.max_hp, false)
@@ -136,6 +214,7 @@ func mount_scheme(scheme: InputScheme) -> void:
 	_hud.add_child(scheme)
 	_hud.move_child(scheme, 0)
 	_layout()
+	_update_exclusions()
 
 func show_hint(text: String) -> void:
 	_hint.text = text
@@ -163,6 +242,7 @@ func show_death(can_revive: bool) -> void:
 
 func on_telegraph_started(kind_id: StringName, duration: float, _index: int) -> void:
 	_telegraphing = true
+	on_strike_timing(duration, parry_window, kind_id, _index)
 	var style := GlowStyles.style_for(kind_id)
 	var color := GlowStyles.color_for(kind_id, _rig.accent)
 	_rig.play_pose(StringName("windup_%s" % kind_id), duration)
@@ -174,7 +254,14 @@ func on_telegraph_started(kind_id: StringName, duration: float, _index: int) -> 
 	_telegraph_tween.tween_method(func(t: float) -> void: _telegraph_bar.set_values(t, 1.0, false), 0.0, 1.0, maxf(duration, 0.01))
 	Audio.play(&"telegraph_heavy" if kind_id == &"heavy" else &"enemy_telegraph")
 
+## Starts the approach ring: the strike lands in `strike_in` seconds and the last `window_seconds` of that are the parry
+## window. Also derived from on_telegraph_started when the duel sends no timing; a later call replaces the ring.
+func on_strike_timing(strike_in: float, window_seconds: float, kind_id: StringName, _index_in_combo := 0) -> void:
+	var accent := _rig.accent if _rig != null else Color.WHITE
+	_ring.start(strike_in, window_seconds, GlowStyles.color_for(kind_id, accent))
+
 func on_strike_resolved(result: StrikeResult) -> void:
+	_ring.stop()
 	_telegraphing = false
 	_kill(_telegraph_tween)
 	_telegraph_bar.visible = false
@@ -196,7 +283,8 @@ func on_strike_resolved(result: StrikeResult) -> void:
 func on_player_attacked(damage: int, enemy_hp: int) -> void:
 	_enemy_bar.set_values(enemy_hp, _enemy_max)
 	var focus := _enemy_focus()
-	_fx.number(focus, str(damage), PUNISH_COLOR if _enemy_staggered else Color.WHITE, 1.4 if _enemy_staggered else 1.0)
+	_pending_number = damage
+	_flush_pending_number.call_deferred()
 	_fx.burst(focus, Color.WHITE, 0.6)
 	_rig.flash(0.15)
 	Audio.play(&"attack")
@@ -205,6 +293,186 @@ func on_player_attacked(damage: int, enemy_hp: int) -> void:
 		return
 	var rest := &"staggered" if _enemy_staggered else RigSpec.IDLE
 	_rig.play_sequence([[&"hurt", HURT_SECONDS], [rest, SETTLE_SECONDS]])
+
+## Right after on_player_attacked: owns the damage number (the fallback number is dropped), crit pop and combo-scaled juice.
+func on_player_hit(damage: int, enemy_hp: int, crit: bool, combo: int) -> void:
+	_enemy_bar.set_values(enemy_hp, _enemy_max)
+	_pending_number = -1
+	var focus := _enemy_focus()
+	var text := str(damage)
+	if _enemy_staggered and not crit:
+		_fx.number(focus, text, PUNISH_COLOR, 1.1, 0.6)
+	else:
+		_fx.hit_number(focus, text, crit)
+	var heat := clampf(combo / 20.0, 0.0, 1.0)
+	_rig.flash(0.15 + heat * 0.1)
+	if crit:
+		_fx.number(focus + Vector2(0, -90), CRIT_TEXT, CRIT_SPARK_COLOR, 1.0, 0.5, 50.0)
+		_fx.burst(focus, CRIT_SPARK_COLOR, 1.8)
+		_fx.shake(6.0 + heat * 6.0, 0.2)
+		_fx.flash(CRIT_SPARK_COLOR, 0.18, 0.12)
+	elif combo >= HITSTOP_COMBO:
+		_fx.burst(focus, COMBO_WARM.lerp(COMBO_HOT, heat), 0.5 + heat)
+		_fx.shake(2.0 + heat * 4.0, 0.12)
+	if crit or combo >= HITSTOP_COMBO:
+		_hitstop(HITSTOP_SECONDS * (1.0 + heat))
+
+## Combo counter near the enemy: punches on every hit, heats up with the multiplier, shakes and fades on reset (0).
+func on_combo_changed(count: int, multiplier: float) -> void:
+	_kill(_combo_tween)
+	if count < COMBO_MIN_SHOWN:
+		if _combo_last >= COMBO_MIN_SHOWN:
+			_combo_reset()
+		_combo_last = count
+		if count == 0:
+			return
+		_combo_box.modulate.a = 0.0
+		return
+	_combo_last = count
+	var color := _combo_color(multiplier)
+	_combo_count.text = "x%d" % count
+	_combo_mult.text = "×%.1f" % multiplier
+	_combo_count.add_theme_color_override("font_color", color)
+	_combo_mult.add_theme_color_override("font_color", color)
+	_combo_box.modulate.a = 1.0
+	_combo_box.position.x = _combo_home.x
+	var punch := 1.0 + COMBO_PUNCH * (0.6 + 0.4 * clampf(multiplier / COMBO_HOT_MULT, 0.0, 1.0))
+	_combo_box.scale = Vector2.ONE * punch
+	_combo_box.rotation = randf_range(-0.06, 0.06)
+	_combo_tween = create_tween().set_parallel()
+	_combo_tween.tween_property(_combo_box, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_combo_tween.tween_property(_combo_box, "rotation", 0.0, 0.18)
+
+## Pause menu (the game layer stops the duel clock on pause_requested / resume_requested).
+func open_pause() -> void:
+	if _paused or _finished:
+		return
+	_paused = true
+	_pause_menu.open()
+	if _scheme != null:
+		_scheme.set_input_enabled(false)
+	pause_requested.emit()
+
+func close_pause() -> void:
+	if not _paused:
+		return
+	_paused = false
+	_pause_menu.close()
+	if _scheme != null and not _finished:
+		_scheme.set_input_enabled(true)
+	resume_requested.emit()
+
+func toggle_pause() -> void:
+	if _paused:
+		close_pause()
+	else:
+		open_pause()
+
+func is_paused() -> bool:
+	return _paused
+
+## Side shop contents; see ShopPanel.set_shop for the dictionary fields.
+func set_shop(items: Array[Dictionary], levels: Array[Dictionary], souls: int) -> void:
+	_shop.set_shop(items, levels, souls)
+	_roll_souls(souls, false)
+
+## Souls of the run: rolls the counter and refreshes the shop's affordability.
+func set_souls(souls: int) -> void:
+	_shop.set_souls(souls)
+	_roll_souls(souls, true)
+
+## Souls gained from a kill: a "+N" flies from the enemy to the counter.
+func on_souls_earned(amount: int) -> void:
+	_fx.fly_text(_enemy_focus(), _souls_label.global_position + _souls_label.size * 0.5, "+%d" % amount, SOULS_COLOR, SOULS_FLY_SECONDS)
+	Audio.play(&"souls_gain")
+
+func _roll_souls(souls: int, animate: bool) -> void:
+	_souls_target = souls
+	_kill(_souls_tween)
+	if not animate:
+		_set_souls_shown(souls)
+		return
+	_souls_tween = create_tween()
+	_souls_tween.tween_method(_set_souls_shown, _souls_shown, souls, SOULS_ROLL_SECONDS).set_delay(SOULS_FLY_SECONDS * 0.8)
+
+func _set_souls_shown(value: int) -> void:
+	_souls_shown = value
+	_souls_label.text = "%s %d" % [BattleText.text("HUD_SOULS", "Souls"), value]
+
+func _build_chrome() -> void:
+	_pause_button.focus_mode = Control.FOCUS_NONE
+	_pause_button.flat = true
+	_pause_button.size = Vector2.ONE * PAUSE_BUTTON_SIZE
+	_pause_button.z_index = BARS_Z
+	_pause_button.pressed.connect(open_pause)
+	_pause_button.draw.connect(_draw_pause_icon)
+	_hud.add_child(_pause_button)
+	_souls_label.add_theme_font_size_override("font_size", SOULS_FONT)
+	_souls_label.add_theme_color_override("font_color", SOULS_COLOR)
+	_souls_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_souls_label.add_theme_constant_override("outline_size", 8)
+	_souls_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_souls_label.z_index = BARS_Z
+	_hud.add_child(_souls_label)
+	_set_souls_shown(0)
+	_shop.z_index = BARS_Z
+	_shop.rects_changed.connect(_update_exclusions)
+	_shop.buy_item_requested.connect(buy_item_requested.emit)
+	_shop.buy_level_requested.connect(buy_level_requested.emit)
+	_shop.use_item_requested.connect(use_item_requested.emit)
+	_hud.add_child(_shop)
+
+func _draw_pause_icon() -> void:
+	var rect := Rect2(Vector2.ZERO, _pause_button.size)
+	_pause_button.draw_rect(rect, Color(0.03, 0.03, 0.04, 0.7))
+	_pause_button.draw_rect(rect, Color(0.45, 0.48, 0.55, 0.8), false, 2.0)
+	for i in 3:
+		_pause_button.draw_rect(Rect2(18.0, 20.0 + i * 15.0, rect.size.x - 36.0, 6.0), Color.WHITE)
+
+func _update_exclusions() -> void:
+	if _scheme == null:
+		return
+	var rects: Array[Rect2] = [Rect2(_pause_button.position, _pause_button.size).grow(6.0)]
+	rects.append_array(_shop.input_rects())
+	_scheme.excluded_rects = rects
+
+func _combo_reset() -> void:
+	_combo_count.add_theme_color_override("font_color", COMBO_COLD)
+	_combo_mult.add_theme_color_override("font_color", COMBO_COLD)
+	_combo_tween = create_tween()
+	_combo_tween.tween_method(func(t: float) -> void:
+		_combo_box.position.x = _combo_home.x + randf_range(-1.0, 1.0) * 14.0 * (1.0 - t)
+		_combo_box.modulate.a = 1.0 - t, 0.0, 1.0, 0.45)
+	_combo_tween.tween_callback(func() -> void: _combo_box.position.x = _combo_home.x)
+
+static func _combo_color(multiplier: float) -> Color:
+	var t := clampf((multiplier - 1.0) / (COMBO_HOT_MULT - 1.0), 0.0, 1.0)
+	if t < 0.5:
+		return COMBO_COLD.lerp(COMBO_WARM, t * 2.0)
+	return COMBO_WARM.lerp(COMBO_HOT, (t - 0.5) * 2.0)
+
+func _flush_pending_number() -> void:
+	if _pending_number < 0:
+		return
+	var damage := _pending_number
+	_pending_number = -1
+	if _enemy_staggered:
+		_fx.number(_enemy_focus(), str(damage), PUNISH_COLOR, 1.2, 0.6)
+	else:
+		_fx.hit_number(_enemy_focus(), str(damage), false)
+
+## Real-time freeze: slows the game clock for a few frames; overlapping calls are ignored.
+func _hitstop(seconds: float) -> void:
+	if _hitstop_active:
+		return
+	_hitstop_active = true
+	Engine.time_scale = HITSTOP_SCALE
+	await get_tree().create_timer(seconds, true, false, true).timeout
+	Engine.time_scale = 1.0
+	_hitstop_active = false
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
 
 func on_stamina_changed(value: float, max_value: float) -> void:
 	_stamina_bar.set_values(value, max_value)
@@ -233,6 +501,8 @@ func on_action_rejected(action_id: StringName, reason: StringName) -> void:
 		Audio.play(&"stamina_empty")
 
 func on_duel_finished(winner_side: StringName) -> void:
+	_finished = true
+	_ring.stop()
 	_telegraphing = false
 	_kill(_telegraph_tween)
 	_telegraph_bar.visible = false
@@ -245,6 +515,10 @@ func on_duel_finished(winner_side: StringName) -> void:
 		return
 	_rig.play_pose(RigSpec.IDLE, SETTLE_SECONDS)
 	Audio.play(&"death")
+
+func _on_parry_window_opened() -> void:
+	_fx.flash(Color.WHITE, TELL_FLASH_ALPHA, TELL_FLASH_SECONDS)
+	Audio.play(&"enemy_telegraph", TICK_PITCH, TICK_DB)
 
 func _show_parry() -> void:
 	var focus := _weapon_point()
@@ -333,6 +607,27 @@ func _build_hud() -> void:
 	_hint.add_theme_constant_override("outline_size", 10)
 	_hint.z_index = BARS_Z
 	_hud.add_child(_hint)
+	_build_combo()
+	_build_chrome()
+
+func _build_combo() -> void:
+	_combo_box.size = COMBO_BOX
+	_combo_box.pivot_offset = COMBO_BOX * 0.5
+	_combo_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combo_box.modulate.a = 0.0
+	_combo_box.z_index = BARS_Z
+	_hud.add_child(_combo_box)
+	for entry: Array in [[_combo_count, COMBO_COUNT_FONT, Vector2(0, 0), 100.0], [_combo_mult, COMBO_MULT_FONT, Vector2(0, 100), 46.0]]:
+		var label := entry[0] as Label
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_font_size_override("font_size", entry[1])
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 12)
+		label.position = entry[2]
+		label.size = Vector2(COMBO_BOX.x, entry[3])
+		_combo_box.add_child(label)
 
 func _layout() -> void:
 	var size := get_viewport().get_visible_rect().size
@@ -355,15 +650,22 @@ func _layout() -> void:
 	_layout_hud(size, bars_top)
 	if _scheme != null:
 		_scheme.layout(size)
+	_update_exclusions()
 
 func _layout_hud(size: Vector2, bars_top: float) -> void:
 	var margin := size.x * MARGIN_SHARE
 	var top_width := size.x * (0.5 if _landscape else 1.0) - margin * 2.0
 	var top_x := (size.x - top_width) * 0.5
 	var top_y := size.y * TOP_HUD_SHARE
-	_place(_enemy_name, Vector2(top_x, top_y), Vector2(top_width, 52))
-	_place(_enemy_bar, Vector2(top_x, top_y + 58), Vector2(top_width, 36))
-	_place(_telegraph_bar, Vector2(top_x, top_y + 100), Vector2(top_width, 14))
+	_place(_pause_button, Vector2(margin, top_y), Vector2.ONE * PAUSE_BUTTON_SIZE)
+	_place(_souls_label, Vector2(margin, top_y + 118.0), Vector2(size.x * 0.4, 44))
+	_shop.layout(size, size.y * TOP_HUD_SHARE + TOP_HUD_HEIGHT + SHOP_TOP_GAP, bars_top - BARS_GAP)
+	_place(_enemy_name, Vector2(top_x + PAUSE_BUTTON_SIZE, top_y), Vector2(top_width - PAUSE_BUTTON_SIZE * 2.0, 52))
+	# Bars start right of the pause button when they would run under it (portrait).
+	var bar_x := maxf(top_x, margin + PAUSE_BUTTON_SIZE + margin * 0.5)
+	var bar_width := top_x + top_width - bar_x
+	_place(_enemy_bar, Vector2(bar_x, top_y + 58), Vector2(bar_width, 36))
+	_place(_telegraph_bar, Vector2(bar_x, top_y + 100), Vector2(bar_width, 14))
 	var bars_width := size.x * LANDSCAPE_BARS_WIDTH_SHARE if _landscape else size.x - margin * 2.0
 	var bars_x := (size.x - bars_width) * 0.5
 	var player_height := 36.0 if _landscape else 40.0
@@ -371,7 +673,14 @@ func _layout_hud(size: Vector2, bars_top: float) -> void:
 	_place(_player_bar, Vector2(bars_x, bars_top), Vector2(bars_width, player_height))
 	_place(_stamina_bar, Vector2(bars_x, bars_top + player_height + 6.0), Vector2(bars_width, stamina_height))
 	_place(_lock_bar, Vector2(bars_x, bars_top + player_height + stamina_height + 12.0), Vector2(bars_width, 10.0))
+	_combo_home = Vector2(size.x - margin - COMBO_BOX.x - SHOP_COLUMN_CLEARANCE, top_y + 130.0) if not _landscape else Vector2(size.x * 0.5 + size.x * 0.12, size.y * 0.3)
+	_combo_box.position = _combo_home
 	_hit_point = Vector2(size.x * 0.5, bars_top - HIT_NUMBER_LIFT)
+	_ring.radius_scale = clampf(minf(size.x, size.y) / RING_SCALE_REF * 1.5, RING_SCALE_MIN, RING_SCALE_MAX)
+	if _landscape:
+		var column := size.x * LANDSCAPE_HINT_WIDTH_SHARE
+		_place(_hint, Vector2(margin, size.y * LANDSCAPE_HINT_Y_SHARE), Vector2(column, LANDSCAPE_HINT_HEIGHT))
+		return
 	var hint_width := size.x * HINT_WIDTH_SHARE
 	_place(_hint, Vector2((size.x - hint_width) * 0.5, bars_top - 190.0), Vector2(hint_width, 110.0))
 

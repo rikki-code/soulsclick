@@ -11,6 +11,9 @@ var realm_reached := 0
 var realm_count := 0
 var step_reached := 0
 var rooms_cleared := 0
+## Endless: realms fully completed (0 = died in the first realm) and rooms won. Profile best depth reads `depth_reached`.
+var depth_reached := 0
+var nodes_cleared := 0
 var souls := 0
 var bank_rate := 0.0
 var embers := 0
@@ -25,9 +28,11 @@ static func build(run: Run, outcome: RunOutcome) -> RunSummary:
 	summary.seed_code = SeedCode.encode(run.config.seed)
 	summary.omen_id = run.omen.id if run.omen != null else &""
 	summary.realm_count = run.realms.size()
-	summary.realm_reached = mini(run.realm_index + 1, run.realms.size())
+	summary.realm_reached = run.realm_index + 1
 	summary.step_reached = run.step_index
 	summary.rooms_cleared = run.history.size()
+	summary.depth_reached = run.depth
+	summary.nodes_cleared = run.history.size()
 	summary.souls = run.souls
 	summary.bank_rate = outcome.bank_rate(run.config)
 	summary.embers = outcome.embers(run)
@@ -39,6 +44,6 @@ func to_dict() -> Dictionary:
 	return {
 		"outcome": outcome_id, "victory": victory, "seed_code": seed_code, "omen": omen_id,
 		"realm_reached": realm_reached, "realm_count": realm_count, "step_reached": step_reached,
-		"rooms_cleared": rooms_cleared, "souls": souls, "bank_rate": bank_rate, "embers": embers,
+		"rooms_cleared": rooms_cleared, "depth_reached": depth_reached, "nodes_cleared": nodes_cleared, "souls": souls, "bank_rate": bank_rate, "embers": embers,
 		"killer_enemy": killer_enemy_id, "history": history,
 	}

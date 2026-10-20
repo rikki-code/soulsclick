@@ -135,7 +135,8 @@ func _make_art(part: Dictionary) -> CanvasItem:
 		result = polygon
 	else:
 		var sprite := Sprite2D.new()
-		sprite.texture = _load_texture(spec.dir + part["file"])
+		var file: String = part["file"]
+		sprite.texture = load_texture(file if file.begins_with("res://") else spec.dir + file)
 		sprite.centered = false
 		sprite.offset = -part["pivot"]
 		result = sprite
@@ -180,7 +181,7 @@ static func _halo() -> GradientTexture2D:
 	return _halo_texture
 
 ## Imported SVG when the editor imported it, raw rasterised SVG otherwise.
-static func _load_texture(path: String) -> Texture2D:
+static func load_texture(path: String) -> Texture2D:
 	if ResourceLoader.exists(path):
 		return load(path) as Texture2D
 	var file := FileAccess.open(path, FileAccess.READ)

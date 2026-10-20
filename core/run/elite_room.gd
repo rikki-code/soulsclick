@@ -19,6 +19,16 @@ func souls_multiplier(realm: RealmDefinition) -> float:
 func hp_multiplier(realm: RealmDefinition) -> float:
 	return realm.elite_hp_multiplier
 
+func kind_hp_factor(curve: DepthCurve) -> float:
+	return curve.elite_hp_factor
+
+func kind_damage_factor(curve: DepthCurve) -> float:
+	return curve.elite_damage_factor
+
+func wave_extra_count(curve: DepthCurve, depth: int, _node: int, rng: RandomNumberGenerator) -> int:
+	var chance := curve.elite_wave_chance_at(depth)
+	return 1 if chance > 0.0 and rng.randf() < chance else 0
+
 func _rewards(run: Run, enemy: EnemyDefinition) -> Array[Dictionary]:
 	var list := super._rewards(run, enemy)
 	list.append({"id": &"relic_offer", "size": run.realm().altar_offer_size})

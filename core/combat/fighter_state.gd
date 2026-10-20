@@ -26,7 +26,8 @@ func can_act() -> bool:
 func stamina_regen_factor() -> float:
 	return 0.0
 
-func damage_taken_multiplier(_tuning: CombatTuning) -> float:
+## Multiplier on damage dealt to this fighter; `attacker_stats` belongs to whoever hits.
+func damage_taken_multiplier(_attacker_stats: CombatStats) -> float:
 	return 1.0
 
 ## Routes an incoming strike to the kind hook that matches this state's defence.

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="Equipment" format=3]
+
+[ext_resource type="Script" path="res://core/combat/equipment.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/equipment_stat.gd" id="2"]
+
+[sub_resource type="Resource" id="s0"]
+script = ExtResource("2")
+stat = &"attack_damage"
+stage = 1
+amount = 2.0
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("2")
+stat = &"attack_lock"
+stage = 1
+amount = 1.6
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("2")
+stat = &"attack_cost"
+stage = 1
+amount = 1.5
+
+[resource]
+script = ExtResource("1")
+id = &"greatsword"
+name_key = "EQUIP_GREATSWORD"
+desc_key = "EQUIP_GREATSWORD_DESC"
+slot = &"weapon"
+stats = Array[ExtResource("2")]([SubResource("s0"), SubResource("s1"), SubResource("s2")])

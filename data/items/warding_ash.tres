@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RunBuffItem" format=3]
+
+[ext_resource type="Script" path="res://core/items/run_buff_item.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/equipment_stat.gd" id="2"]
+
+[sub_resource type="Resource" id="s0"]
+script = ExtResource("2")
+stat = &"parry_window"
+stage = 1
+amount = 1.4
+
+[resource]
+script = ExtResource("1")
+id = &"warding_ash"
+name_key = "ITEM_WARDING_ASH"
+desc_key = "ITEM_WARDING_ASH_DESC"
+icon = &"warding_ash"
+price_souls = 50
+stats = Array[ExtResource("2")]([SubResource("s0")])

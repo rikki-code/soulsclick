@@ -5,8 +5,8 @@ extends RefCounted
 var seed := 0
 var max_hp := 100
 var start_souls := 0
-## Share of souls converted to Embers on death or abandon (victory is always 1.0).
-var death_bank_rate := 0.5
+## Share of souls converted to Embers on death or abandon (victory is always 1.0). A rewarded ad banks half.
+var death_bank_rate := 0.0
 
 func _init(p_seed := 0, p_max_hp := 100) -> void:
 	seed = p_seed & SeedCode.SEED_MAX
@@ -18,5 +18,5 @@ func to_dict() -> Dictionary:
 static func from_dict(data: Dictionary) -> RunConfig:
 	var config := RunConfig.new(int(data.get("seed", 0)), maxi(int(data.get("max_hp", 100)), 1))
 	config.start_souls = maxi(int(data.get("start_souls", 0)), 0)
-	config.death_bank_rate = clampf(float(data.get("death_bank_rate", 0.5)), 0.0, 1.0)
+	config.death_bank_rate = clampf(float(data.get("death_bank_rate", 0.0)), 0.0, 1.0)
 	return config

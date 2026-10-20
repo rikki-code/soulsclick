@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="Equipment" format=3]
+
+[ext_resource type="Script" path="res://core/combat/equipment.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/equipment_stat.gd" id="2"]
+
+[sub_resource type="Resource" id="s0"]
+script = ExtResource("2")
+stat = &"parry_window"
+amount = 0.1
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("2")
+stat = &"block_min_duration"
+stage = 1
+amount = 0.8
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("2")
+stat = &"block_cooldown"
+stage = 1
+amount = 0.7
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("2")
+stat = &"chip_share"
+amount = 0.07
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("2")
+stat = &"block_cost"
+stage = 1
+amount = 0.8
+
+[resource]
+script = ExtResource("1")
+id = &"buckler"
+name_key = "EQUIP_BUCKLER"
+desc_key = "EQUIP_BUCKLER_DESC"
+slot = &"shield"
+stats = Array[ExtResource("2")]([SubResource("s0"), SubResource("s1"), SubResource("s2"), SubResource("s3"), SubResource("s4")])

@@ -297,12 +297,24 @@ Ordered design-driven tasks (each names its owner area, matches `plan.md` Phase 
 | Question | Decision |
 |---|---|
 | One `Modifier` abstraction | Yes: relics, elite affixes, statuses, curses, vessels, equipment |
-| Block input | Player setting: tap (default) or hold. Core must support both |
+| Block input | **Hold or tap** (replaces the tap/hold setting, 2026-10-20 later): block lasts while held and at least `block_min_duration` after a tap; holding reduces damage; each blocked hit costs stamina (scaled by hit damage and shield stats), no drain while idle-holding; stamina 0 = guard broken. Parry = block **pressed** within the parry window before the strike. Attack while holding drops the block |
 | Arts | Deferred until after the slice |
 | Souls on death | **0% banked**; a rewarded ad rescues 50% (not the designer's 50%) |
-| Permanent power | Only max HP, capped at +16% |
+| Permanent power | **Changed (2026-10-20 evening): two layers.** Run: fast stat levels for Souls after each fight (lost on death). Permanent: slow stat levels for Embers, rising price, no cap (clicker feel). Stats: HP, stamina, damage, stamina regen. Enemies scale with realm level / Dread |
 | Unlocks | ~70% achievements, ~30% Embers |
 | Continue run | Yes, at room boundaries |
 | Equipment | Vessel gives the starting set; swaps in shops and rewards; all Modifiers |
 | Daily run | After a portal adapter exists |
 | Names (Embers, Vessel, Omen, Dread) | Working names, not final |
+| Parry readability | View shows the strike moment explicitly: an approach ring that closes on a target ring at the strike, the parry window lit on it, a tell (flash + tick) when the window opens. Core events carry strike time and parry window |
+| Tempo | Clicker feel: cheap fast attacks (lock ~0.2 s, cost ~10), lower damage per hit, more enemy HP, combo multiplier for consecutive hits without taking damage, crit clicks in the post-parry punish window |
+| Mouse | Keep halves of the screen as on touch (keyboard can hold block + attack) |
+| Run purchases | **In battle, side panel** (final): a collapsible shop drawer during every fight, paid in run Souls, any time. Sells consumables (persist through the run, used from HUD slots), run-long buffs, and run stat levels (replaces the post-fight level-up screen). Souls come in during the fight: small amount per hit (scaled by combo) and per parry, plus the kill reward. No pre-run shop |
+| Pause | Pause menu in battle (☰ / Esc): resume, settings, abandon run, main menu; pausing stops the duel clock |
+| Endless | **Depth** (2026-10-20 night): after the boss the next realm starts deeper; enemy stats grow exponentially per node; the run lasts until death; best depth is recorded (leaderboard later). New affixes join with depth so difficulty is not only numbers |
+| Map | Keep the door choice per step, but visualize the path: nodes already walked, the branching doors now, unknown steps ahead |
+| Enemies per room | Waves (one after another, combo and souls carry over) now; two at once later for deep realms |
+| Revive | Once **per fight** (not per run); the k-th revive of the run costs k rewarded ads (1, then 2, then 3; 3 is the cap, every later revive stays 3) |
+| Ad for missing souls | When a shop/altar purchase lacks souls, the button offers "watch 1 ad" to get it anyway |
+| Flask on purchase | Buying a flask in battle drinks it at once if HP is not full (else it is stored) |
+| Room rewards | Later: rewards along the run (e.g. +flask, +max HP) picked after elites/bosses |

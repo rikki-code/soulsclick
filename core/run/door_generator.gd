@@ -5,16 +5,17 @@ extends RefCounted
 static func generate(run: Run) -> DoorOffer:
 	var realm := run.realm()
 	var rule := realm.rule_at(run.step_index)
-	var rng := RunRng.stream(run.config.seed, RunRng.MAP, run.realm_index, run.step_index)
+	var rng := RunRng.stream(run.config.seed, RunRng.MAP, run.depth, run.step_index)
 	var offer := DoorOffer.new()
 	offer.realm_index = run.realm_index
+	offer.depth = run.depth
 	offer.realm_id = realm.id
 	offer.step_index = run.step_index
 	offer.step_count = realm.step_count()
 	var taken := {}
 	var doors: Array[Door] = []
 	for kind_id in rule.required_kinds:
-		_add(doors, taken, kind_id, realm, rng)
+		_add(doors, taken, kind_id, realm, rng, run.depth)
 	var wanted := maxi(_door_count(rule, rng), doors.size())
 	var candidates: Array[StringName] = []
 	for kind_id in rule.kind_weights:
@@ -26,7 +27,7 @@ static func generate(run: Run) -> DoorOffer:
 		var picked := WeightedPick.index(rng, weights)
 		if picked < 0:
 			break
-		if not _add(doors, taken, candidates[picked], realm, rng):
+		if not _add(doors, taken, candidates[picked], realm, rng, run.depth):
 			candidates.remove_at(picked)
 	_shuffle(doors, rng)
 	for i in doors.size():
@@ -36,9 +37,9 @@ static func generate(run: Run) -> DoorOffer:
 	offer.doors = doors
 	return offer
 
-static func _add(doors: Array[Door], taken: Dictionary, kind_id: StringName, realm: RealmDefinition, rng: RandomNumberGenerator) -> bool:
+static func _add(doors: Array[Door], taken: Dictionary, kind_id: StringName, realm: RealmDefinition, rng: RandomNumberGenerator, depth: int) -> bool:
 	var kind := RoomKindCatalog.get_kind(kind_id)
-	var door := kind.make_door(realm, rng, taken) if kind != null else null
+	var door := kind.make_door(realm, rng, taken, depth) if kind != null else null
 	if door == null:
 		return false
 	taken[door.signature()] = true

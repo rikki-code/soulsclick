@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="Equipment" format=3]
+
+[ext_resource type="Script" path="res://core/combat/equipment.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/equipment_stat.gd" id="2"]
+
+[sub_resource type="Resource" id="s0"]
+script = ExtResource("2")
+stat = &"stamina_regen"
+stage = 1
+amount = 1.2
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("2")
+stat = &"max_stamina"
+amount = 10.0
+
+[resource]
+script = ExtResource("1")
+id = &"light_armor"
+name_key = "EQUIP_LIGHT_ARMOR"
+desc_key = "EQUIP_LIGHT_ARMOR_DESC"
+slot = &"armor"
+stats = Array[ExtResource("2")]([SubResource("s0"), SubResource("s1")])

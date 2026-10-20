@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ConsumableItem" format=3]
+
+[ext_resource type="Script" path="res://core/items/consumable_item.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"flask"
+name_key = "ITEM_FLASK"
+desc_key = "ITEM_FLASK_DESC"
+icon = &"flask"
+price_souls = 30
+charges_per_buy = 2
+heal_share = 0.35

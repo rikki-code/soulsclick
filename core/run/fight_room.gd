@@ -10,6 +10,10 @@ func id() -> StringName:
 func entries(realm: RealmDefinition) -> Array[RealmEnemyEntry]:
 	return realm.fight_pool
 
+func wave_extra_count(curve: DepthCurve, depth: int, node: int, rng: RandomNumberGenerator) -> int:
+	var range_size := curve.fight_wave_range(depth, node)
+	return rng.randi_range(range_size.x, range_size.y) - 1
+
 func _rewards(run: Run, enemy: EnemyDefinition) -> Array[Dictionary]:
 	var list := super._rewards(run, enemy)
 	list.append({"id": &"relic_or_heal", "chance": run.realm().fight_pick_chance})

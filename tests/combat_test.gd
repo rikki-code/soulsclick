@@ -179,6 +179,7 @@ func _test_late_and_early_block() -> void:
 	var probe := Probe.new(duel)
 	_run_to_telegraph(duel, probe)
 	duel.try_block()
+	duel.try_block_release()
 	_until_strike(duel, probe)
 	_check(probe.results[0].outcome == StrikeResult.HIT, "block that already ended before the strike does not help")
 
@@ -286,7 +287,7 @@ func _test_stagger_punish() -> void:
 	_run(duel, duel.tuning.stagger_time + 0.1)
 	_check(duel.enemy.state.id() == IdleState.ID, "stagger ends")
 	duel.try_attack()
-	_check(probe.attacks[1]["damage"] == duel.player.damage, "normal damage after stagger")
+	_check(probe.attacks[1]["damage"] == roundi(duel.player.damage * (1.0 + duel.tuning.combo_step * duel.tuning.combo_crit_weight)), "normal damage after stagger")
 
 func _test_input_gate() -> void:
 	var duel := _single(&"quick", 1.0)

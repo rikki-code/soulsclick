@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="StatLevelTable" format=3]
+
+[ext_resource type="Script" path="res://core/progression/stat_level_table.gd" id="1"]
+[ext_resource type="Script" path="res://core/progression/stat_level_def.gd" id="2"]
+
+[sub_resource type="Resource" id="max_hp"]
+script = ExtResource("2")
+stat = &"max_hp"
+increment = 4.0
+cost_base = 30.0
+cost_growth = 1.18
+
+[sub_resource type="Resource" id="max_stamina"]
+script = ExtResource("2")
+stat = &"max_stamina"
+increment = 4.0
+cost_base = 30.0
+cost_growth = 1.18
+
+[sub_resource type="Resource" id="attack_damage"]
+script = ExtResource("2")
+stat = &"attack_damage"
+increment = 0.5
+cost_base = 50.0
+cost_growth = 1.25
+
+[sub_resource type="Resource" id="stamina_regen"]
+script = ExtResource("2")
+stat = &"stamina_regen"
+increment = 1.0
+cost_base = 40.0
+cost_growth = 1.2
+
+[resource]
+script = ExtResource("1")
+stats = Array[ExtResource("2")]([SubResource("max_hp"), SubResource("max_stamina"), SubResource("attack_damage"), SubResource("stamina_regen")])
