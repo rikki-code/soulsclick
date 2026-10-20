@@ -1,0 +1,84 @@
+{
+ "shields": {
+  "buckler": {
+   "file": "shields/buckler.svg",
+   "pivot": [
+    183,
+    183
+   ],
+   "size": [
+    366,
+    366
+   ],
+   "glow": true,
+   "note": "small round; fist hides behind the boss"
+  },
+  "kite": {
+   "file": "shields/kite.svg",
+   "pivot": [
+    208,
+    300
+   ],
+   "size": [
+    416,
+    625
+   ],
+   "glow": true,
+   "note": "medium; pivot at the grip behind the boss"
+  },
+  "tower": {
+   "file": "shields/tower.svg",
+   "pivot": [
+    318,
+    398
+   ],
+   "size": [
+    636,
+    1049
+   ],
+   "glow": true,
+   "note": "huge; raised it hides the enemy from y~1010 down (eyes/head stay visible)"
+  }
+ },
+ "weapons": {
+  "dagger": {
+   "file": "weapons/dagger.svg",
+   "pivot": [
+    98,
+    402
+   ],
+   "size": [
+    196,
+    552
+   ],
+   "glow": true,
+   "note": "short, fast"
+  },
+  "sword": {
+   "file": "weapons/sword.svg",
+   "pivot": [
+    134,
+    894
+   ],
+   "size": [
+    268,
+    1090
+   ],
+   "glow": true,
+   "note": "one-hand"
+  },
+  "greatsword": {
+   "file": "weapons/greatsword.svg",
+   "pivot": [
+    172,
+    1172
+   ],
+   "size": [
+    344,
+    1488
+   ],
+   "glow": true,
+   "note": "two-hand length, blade reaches y~700 from idle"
+  }
+ }
+}

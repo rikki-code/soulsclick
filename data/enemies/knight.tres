@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/attack_step_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="quick"]
+script = ExtResource("2")
+kind_id = &"quick"
+telegraph_time = 0.6
+damage_scale = 1.0
+recovery_time = 1.0
+
+[sub_resource type="Resource" id="feint"]
+script = ExtResource("2")
+kind_id = &"feint"
+telegraph_time = 0.6
+imitates = &"quick"
+recovery_time = 0.5
+
+[sub_resource type="Resource" id="heavy"]
+script = ExtResource("2")
+kind_id = &"heavy"
+telegraph_time = 1.1
+damage_scale = 2.2
+recovery_time = 1.4
+
+[resource]
+script = ExtResource("1")
+id = &"knight"
+name_key = "ENEMY_KNIGHT"
+hp = 90
+damage = 16
+pattern = Array[ExtResource("2")]([SubResource("quick"), SubResource("feint"), SubResource("heavy")])
+palette_tag = &"steel"
+souls_reward = 30
+opening_delay = 1.4
+post_stagger_delay = 0.7

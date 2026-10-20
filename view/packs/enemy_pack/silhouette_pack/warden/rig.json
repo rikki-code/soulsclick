@@ -1,0 +1,1217 @@
+{
+ "accent": "#ff4a3d",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "parts": [
+  {
+   "id": "legs",
+   "file": "legs.svg",
+   "parent": "",
+   "pivot": [
+    184,
+    8
+   ],
+   "at": [
+    512,
+    640
+   ],
+   "z": 0
+  },
+  {
+   "id": "body",
+   "file": "body.svg",
+   "parent": "",
+   "pivot": [
+    354,
+    380
+   ],
+   "at": [
+    512,
+    640
+   ],
+   "z": 1
+  },
+  {
+   "id": "core",
+   "file": "core.svg",
+   "parent": "body",
+   "pivot": [
+    28,
+    198
+   ],
+   "at": [
+    354,
+    380
+   ],
+   "z": 2
+  },
+  {
+   "id": "head",
+   "file": "head.svg",
+   "parent": "body",
+   "pivot": [
+    223,
+    213
+   ],
+   "at": [
+    354,
+    116
+   ],
+   "z": 3
+  },
+  {
+   "id": "eyes",
+   "file": "eyes.svg",
+   "parent": "head",
+   "pivot": [
+    58,
+    66
+   ],
+   "at": [
+    223,
+    213
+   ],
+   "z": 4
+  },
+  {
+   "id": "arm_l",
+   "file": "arm_l.svg",
+   "parent": "body",
+   "pivot": [
+    56,
+    48
+   ],
+   "at": [
+    138,
+    124
+   ],
+   "z": 5
+  },
+  {
+   "id": "forearm_l",
+   "file": "forearm_l.svg",
+   "parent": "arm_l",
+   "pivot": [
+    72,
+    44
+   ],
+   "at": [
+    56,
+    213
+   ],
+   "z": 6
+  },
+  {
+   "id": "arm_r",
+   "file": "arm_r.svg",
+   "parent": "body",
+   "pivot": [
+    56,
+    48
+   ],
+   "at": [
+    570,
+    124
+   ],
+   "z": 7
+  },
+  {
+   "id": "forearm_r",
+   "file": "forearm_r.svg",
+   "parent": "arm_r",
+   "pivot": [
+    56,
+    44
+   ],
+   "at": [
+    56,
+    213
+   ],
+   "z": 8
+  },
+  {
+   "id": "weapon",
+   "file": "weapon.svg",
+   "parent": "forearm_r",
+   "pivot": [
+    38,
+    96
+   ],
+   "at": [
+    56,
+    219
+   ],
+   "z": 9
+  },
+  {
+   "id": "chain",
+   "file": "chain.svg",
+   "parent": "weapon",
+   "pivot": [
+    21,
+    167
+   ],
+   "at": [
+    38,
+    8
+   ],
+   "z": 10
+  },
+  {
+   "id": "ball",
+   "file": "ball.svg",
+   "parent": "chain",
+   "pivot": [
+    104,
+    158
+   ],
+   "at": [
+    21,
+    17
+   ],
+   "z": 11
+  }
+ ],
+ "poses": {
+  "idle": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 4.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -6.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -16.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": 44.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 120.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": -30.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_quick": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -8,
+    "move": [
+     10,
+     6
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 6,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 52.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -99.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -48.1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": 89.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 6.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 110.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_quick": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 14,
+    "move": [
+     -16,
+     24
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 12,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 44.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -89.5,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": 75.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -75.1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -84.1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": -60.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_heavy": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -10,
+    "move": [
+     0,
+     6
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": -135.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": 101.4,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -51.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -206.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -91.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 10.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_heavy": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 20,
+    "move": [
+     -8,
+     54
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 18,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 18.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -79.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -6.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -256.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 33.6,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 15.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_feint": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -4,
+    "move": [
+     -8,
+     22
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -18,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 55.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -115.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -75.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": 163.5,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -71.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 33.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_combo": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 10,
+    "move": [
+     -14,
+     6
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 10,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 47.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -96.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -10.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -243.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -23.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 0.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_combo": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -14,
+    "move": [
+     18,
+     16
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": -67.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": 4.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": 104.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -73.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -109.5,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 0.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "recover": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 10,
+    "move": [
+     0,
+     34
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 20,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": -0.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -5.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -46.8,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": 110.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 56.1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 30.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "staggered": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -16,
+    "move": [
+     0,
+     20
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -22,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": -83.5,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": 171.6,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": 31.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -109.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 134.4,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 120.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "hurt": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -8,
+    "move": [
+     0,
+     8
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -12,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": 39.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": -71.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": -20.6,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": 51.9,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": 91.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": 25.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "death": {
+   "legs": {
+    "rot": -84,
+    "move": [
+     40,
+     62
+    ]
+   },
+   "body": {
+    "rot": -82,
+    "move": [
+     40,
+     62
+    ]
+   },
+   "core": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": -10,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_l": {
+    "rot": -39.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_l": {
+    "rot": 43.7,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "arm_r": {
+    "rot": 64.3,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "forearm_r": {
+    "rot": -5.2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "weapon": {
+    "rot": -77.1,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "chain": {
+    "rot": -0.0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "ball": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   }
+  }
+ },
+ "glow_parts": [
+  "core",
+  "eyes",
+  "weapon",
+  "ball"
+ ]
+}

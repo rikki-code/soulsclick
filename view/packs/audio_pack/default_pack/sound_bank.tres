@@ -1,0 +1,143 @@
+[gd_resource type="Resource" script_class="AudioBank" format=3]
+
+[ext_resource type="Script" path="res://view/audio/audio_bank.gd" id="bank"]
+[ext_resource type="Script" path="res://view/audio/sound_cue.gd" id="cue"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/ui_click.wav" id="sfx/ui_click.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/ui_hover.wav" id="sfx/ui_hover.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/attack.wav" id="sfx/attack.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/block_1.wav" id="sfx/block_1.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/block_2.wav" id="sfx/block_2.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/parry_1.wav" id="sfx/parry_1.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/parry_2.wav" id="sfx/parry_2.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/parry_3.wav" id="sfx/parry_3.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/perfect_parry.wav" id="sfx/perfect_parry.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/hit_1.wav" id="sfx/hit_1.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/hit_2.wav" id="sfx/hit_2.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/enemy_telegraph.wav" id="sfx/enemy_telegraph.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/telegraph_heavy.wav" id="sfx/telegraph_heavy.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/guard_break.wav" id="sfx/guard_break.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/stamina_empty.wav" id="sfx/stamina_empty.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/feint.wav" id="sfx/feint.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/stagger.wav" id="sfx/stagger.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/souls_gain.wav" id="sfx/souls_gain.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/victory.wav" id="sfx/victory.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/sfx/death.wav" id="sfx/death.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/music/menu.wav" id="music/menu.wav"]
+[ext_resource type="AudioStream" path="res://view/packs/audio_pack/default_pack/music/battle.wav" id="music/battle.wav"]
+
+[sub_resource type="Resource" id="cue_ui_click"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/ui_click.wav")])
+volume_db = -6.0
+pitch_jitter = 0.02
+cooldown_msec = 20
+
+[sub_resource type="Resource" id="cue_ui_hover"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/ui_hover.wav")])
+volume_db = -14.0
+pitch_jitter = 0.04
+cooldown_msec = 40
+
+[sub_resource type="Resource" id="cue_attack"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/attack.wav")])
+volume_db = -5.0
+pitch_jitter = 0.04
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_block"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/block_1.wav"), ExtResource("sfx/block_2.wav")])
+volume_db = -4.0
+pitch_jitter = 0.03
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_parry"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/parry_1.wav"), ExtResource("sfx/parry_2.wav"), ExtResource("sfx/parry_3.wav")])
+volume_db = -2.0
+pitch_jitter = 0.02
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_perfect_parry"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/perfect_parry.wav")])
+volume_db = -1.0
+pitch_jitter = 0.0
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_hit"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/hit_1.wav"), ExtResource("sfx/hit_2.wav")])
+volume_db = -3.0
+pitch_jitter = 0.05
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_enemy_telegraph"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/enemy_telegraph.wav")])
+volume_db = -8.0
+pitch_jitter = 0.03
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_telegraph_heavy"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/telegraph_heavy.wav")])
+volume_db = -6.0
+pitch_jitter = 0.03
+cooldown_msec = 80
+
+[sub_resource type="Resource" id="cue_guard_break"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/guard_break.wav")])
+volume_db = -3.0
+pitch_jitter = 0.03
+cooldown_msec = 200
+
+[sub_resource type="Resource" id="cue_stamina_empty"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/stamina_empty.wav")])
+volume_db = -8.0
+pitch_jitter = 0.04
+cooldown_msec = 200
+
+[sub_resource type="Resource" id="cue_feint"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/feint.wav")])
+volume_db = -7.0
+pitch_jitter = 0.05
+cooldown_msec = 100
+
+[sub_resource type="Resource" id="cue_stagger"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/stagger.wav")])
+volume_db = -5.0
+pitch_jitter = 0.03
+cooldown_msec = 200
+
+[sub_resource type="Resource" id="cue_souls_gain"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/souls_gain.wav")])
+volume_db = -10.0
+pitch_jitter = 0.05
+cooldown_msec = 60
+
+[sub_resource type="Resource" id="cue_victory"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/victory.wav")])
+volume_db = -3.0
+pitch_jitter = 0.0
+cooldown_msec = 1000
+
+[sub_resource type="Resource" id="cue_death"]
+script = ExtResource("cue")
+streams = Array[AudioStream]([ExtResource("sfx/death.wav")])
+volume_db = -3.0
+pitch_jitter = 0.02
+cooldown_msec = 300
+
+[resource]
+script = ExtResource("bank")
+cues = {"ui_click": SubResource("cue_ui_click"), "ui_hover": SubResource("cue_ui_hover"), "attack": SubResource("cue_attack"), "block": SubResource("cue_block"), "parry": SubResource("cue_parry"), "perfect_parry": SubResource("cue_perfect_parry"), "hit": SubResource("cue_hit"), "enemy_telegraph": SubResource("cue_enemy_telegraph"), "telegraph_heavy": SubResource("cue_telegraph_heavy"), "guard_break": SubResource("cue_guard_break"), "stamina_empty": SubResource("cue_stamina_empty"), "feint": SubResource("cue_feint"), "stagger": SubResource("cue_stagger"), "souls_gain": SubResource("cue_souls_gain"), "victory": SubResource("cue_victory"), "death": SubResource("cue_death")}
+music = {"menu": ExtResource("music/menu.wav"), "battle": ExtResource("music/battle.wav")}

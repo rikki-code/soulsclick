@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CombatTuning" format=3]
+
+[ext_resource type="Script" path="res://core/combat/combat_tuning.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+player_hp = 100
+player_stamina = 100.0
+player_damage = 6
+parry_window = 0.25
+block_duration = 0.5
+block_cooldown = 0.35
+attack_duration = 0.45
+stagger_time = 1.6
+attack_stamina_cost = 25.0
+block_stamina_cost = 18.0
+stamina_regen = 22.0
+punish_multiplier = 3.0
+chip_damage_share = 0.25
+guard_break_damage_share = 0.6
+enemy_hp_growth = 0.25
+enemy_damage_growth = 0.15
+enemy_souls_growth = 0.2

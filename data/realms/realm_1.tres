@@ -1,0 +1,97 @@
+[gd_resource type="Resource" script_class="RealmDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/run/realm_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/run/step_rule.gd" id="2"]
+[ext_resource type="Script" path="res://core/run/realm_enemy_entry.gd" id="3"]
+[ext_resource type="Resource" path="res://data/enemies/grunt.tres" id="4"]
+[ext_resource type="Resource" path="res://data/enemies/knight.tres" id="5"]
+[ext_resource type="Resource" path="res://data/enemies/warden.tres" id="6"]
+
+[sub_resource type="Resource" id="step_1"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 1.0
+}
+door_count_weights = {
+2: 1.0
+}
+
+[sub_resource type="Resource" id="step_2"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 3.0,
+&"altar": 1.0
+}
+required_kinds = Array[StringName]([&"altar"])
+door_count_weights = {
+2: 1.0
+}
+
+[sub_resource type="Resource" id="step_3"]
+script = ExtResource("2")
+kind_weights = {
+&"elite": 1.0,
+&"fight": 2.0,
+&"shop": 2.0
+}
+required_kinds = Array[StringName]([&"elite"])
+door_count_weights = {
+1: 1.0,
+2: 8.0,
+3: 2.0
+}
+
+[sub_resource type="Resource" id="step_4"]
+script = ExtResource("2")
+kind_weights = {
+&"bonfire": 2.0,
+&"shop": 1.0
+}
+required_kinds = Array[StringName]([&"bonfire"])
+door_count_weights = {
+1: 1.0,
+2: 8.0,
+3: 1.0
+}
+
+[sub_resource type="Resource" id="step_5"]
+script = ExtResource("2")
+kind_weights = {
+&"boss": 1.0
+}
+required_kinds = Array[StringName]([&"boss"])
+door_count_weights = {
+1: 1.0
+}
+
+[sub_resource type="Resource" id="fight_grunt"]
+script = ExtResource("3")
+enemy = ExtResource("4")
+weight = 3.0
+
+[sub_resource type="Resource" id="fight_knight"]
+script = ExtResource("3")
+enemy = ExtResource("5")
+weight = 2.0
+
+[sub_resource type="Resource" id="elite_grunt"]
+script = ExtResource("3")
+enemy = ExtResource("4")
+weight = 1.0
+affixes = Array[StringName]([&"swift", &"plated"])
+
+[sub_resource type="Resource" id="elite_knight"]
+script = ExtResource("3")
+enemy = ExtResource("5")
+weight = 1.0
+affixes = Array[StringName]([&"swift", &"plated"])
+
+[resource]
+script = ExtResource("1")
+id = &"realm_1"
+name_key = "REALM_1"
+palette_tag = &"ember"
+step_rules = Array[ExtResource("2")]([SubResource("step_1"), SubResource("step_2"), SubResource("step_3"), SubResource("step_4"), SubResource("step_5")])
+fight_pool = Array[ExtResource("3")]([SubResource("fight_grunt"), SubResource("fight_knight")])
+elite_pool = Array[ExtResource("3")]([SubResource("elite_grunt"), SubResource("elite_knight")])
+boss = ExtResource("6")

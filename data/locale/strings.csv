@@ -1,0 +1,37 @@
+keys,en,ru
+GAME_TITLE,Souls Clicker,Кликер душ
+MENU_PLAY,Play,Играть
+MENU_SETTINGS,Settings,Настройки
+MENU_QUIT,Quit,Выход
+MENU_BACK,Back,Назад
+SETTINGS_TITLE,Settings,Настройки
+SETTINGS_MASTER,Master volume,Общая громкость
+SETTINGS_MUSIC,Music,Музыка
+SETTINGS_SFX,Sound effects,Звуки
+SETTINGS_LANGUAGE,Language,Язык
+SETTINGS_CONTROLS,Controls,Управление
+CONTROLS_HANDS,Hands,Руки
+CONTROLS_BUTTONS,Buttons,Кнопки
+CONTROLS_SWIPES,Swipes,Свайпы
+LANGUAGE_AUTO,Auto,Авто
+LANGUAGE_EN,English,English
+LANGUAGE_RU,Русский,Русский
+BATTLE_ATTACK,Attack,Удар
+BATTLE_BLOCK,Block,Блок
+BATTLE_PARRY,Parry!,Парирование!
+BATTLE_VICTORY,Foe vanquished,Враг повержен
+BATTLE_DEATH,You have fallen,Вы пали в бою
+BATTLE_REVIVE,Revive (watch ad),Воскреснуть (реклама)
+BATTLE_RETRY,Try again,Ещё раз
+BATTLE_SOULS,Souls: %d,Души: %d
+BATTLE_CONTINUE,Continue,Продолжить
+ENEMY_GRUNT,Hollow Footman,Пустой пехотинец
+ENEMY_KNIGHT,Ashen Knight,Пепельный рыцарь
+ENEMY_WARDEN,Cinder Warden,Хранитель углей
+HINT_HANDS,Tap the left half to block. Tap the right half to attack.,Нажмите слева чтобы блокировать. Справа чтобы бить.
+HINT_BUTTONS,Use the buttons below to attack and block.,Кнопки внизу: удар и блок.
+HINT_SWIPES,Swipe up to attack. Swipe down to block.,Свайп вверх: удар. Свайп вниз: блок.
+REALM_1,Ashen Halls,Пепельные залы
+ENEMY_HOUND,Chain Hound,Цепной пёс
+ENEMY_DANCER,Veil Dancer,Танцующая в вуали
+ENEMY_BULWARK,Bell Warden,Колокольный страж
