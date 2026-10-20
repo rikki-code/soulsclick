@@ -25,13 +25,14 @@ description: >
 - Pack path: `PackPaths.AUDIO_PACK` (`view/pack_paths.gd`) = `view/packs/audio_pack/default_pack/` (`sound_bank.tres`, `sfx/`, `music/`).
 - Cues (name: intended trigger; volume/jitter/cooldown live in `CUES` of the generator):
   - `ui_click`: any button/slider (automatic). `ui_hover`: button hover (automatic, quiet).
-  - `attack`: player starts a swing. `feint`: enemy feint is revealed (air only, no impact).
+  - `attack`: player swing (swoosh into a heavy meat/metal hit, 3 random variants, 0 dB = loudest SFX). `feint`: enemy feint is revealed (air only, no impact).
   - `enemy_telegraph`: enemy light/normal attack wind-up starts (rising ticks). `telegraph_heavy`: heavy attack wind-up (deeper, slower).
   - `hit`: damage lands on the player or enemy (2 variants). `block`: attack blocked (dull knock, 2 variants).
   - `parry`: successful parry (clang + whoomp, 3 random variants). `perfect_parry`: parry in the tightest window (parry + chime layer; play instead of `parry`).
   - `guard_break`: block/guard broken by a heavy. `stagger`: a fighter is staggered/stunned. `stamina_empty`: action refused for lack of stamina.
   - `souls_gain`: souls added (kill reward, counter ticking up). `victory`: duel won. `death`: player died.
-  - Music: `menu` (58 s), `battle` (38 s); both loop seamlessly (additive drone snapped to whole cycles + wrapped reverb tail).
+  - Music: `menu` (58 s); `battle_1`..`battle_4` (~40 s each, the menu harmony per floor: higher number = faster, lower key, more percussion, stronger choir pad; 11 kHz to stay small); `battle` = alias of `battle_1`. All loop seamlessly (additive drone snapped to whole cycles + wrapped reverb tail).
+- Recorded cues: `RECORDED` in the generator maps a cue to wav files in `default_pack/sfx_rec/` (Kenney CC0 Impact Sounds / RPG Audio, processed with ffmpeg; sources in `view/packs/audio_pack/LICENSES.md`: attack, hit, block, parry, perfect_parry, guard_break, enemy_telegraph, telegraph_heavy, feint). Those cues are not synthesized; their `CUES` row only gives volume/jitter/cooldown. Others (stagger, stamina_empty, souls_gain, victory, death, ui_*) stay synthesized. Tonal cues (`TONAL` in the generator -> `SoundCue.tonal`: attack, block, parry, perfect_parry, guard_break, enemy_telegraph, telegraph_heavy) are pitch-shifted by `tools/sfx_prep.py` to the nearest A/C/E (dominant pitch via FFT) so they sit in the battle music's A minor, with jitter capped at 1.5%. `Audio.set_key_shift(semitones)` transposes them at play time (0 = A minor; realm themes: battle_1..4 = 0, -1, -3, -5). New recorded sample = file in `sfx_rec/` + entry in `RECORDED` + license line.
 - Regenerate: `python3 tools/gen_audio.py` then `godot --headless --path . --import`. New cue = builder function + row in `CUES` (variants > 1: builder takes `(P, v)`, files `name_1.wav`.., picked at random; stale sfx files are wiped on each run); new pack = `Profile` subclass in `PROFILES` + `PackPaths` constant.
 
 ## Translation keys used by the shell

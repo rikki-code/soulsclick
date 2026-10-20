@@ -96,6 +96,8 @@ var _landscape := false
 var _telegraph_tween: Tween
 var _lock_tween: Tween
 var _background := TextureRect.new()
+## Background file id in the background pack (e.g. `realm_2_boss`); empty = the enemy's own background.
+var background_id: StringName = &""
 var _stage_layer := CanvasLayer.new()
 var _stage := Node2D.new()
 var _hud_layer := CanvasLayer.new()
@@ -202,7 +204,7 @@ func begin(definition: EnemyDefinition, enemy: Fighter, player: Fighter) -> void
 	_rig = EnemyRig.new()
 	_stage.add_child(_rig)
 	_rig.setup(RigSpec.load_for(definition.id, Color(0.9, 0.3, 0.2)))
-	_load_background(definition.id)
+	_load_background(background_id if background_id != &"" else definition.id)
 	set_input_enabled(true)
 	_layout()
 
@@ -567,8 +569,8 @@ func _enemy_focus() -> Vector2:
 func _weapon_point() -> Vector2:
 	return _rig.part_center(&"weapon") if _rig.has_part(&"weapon") else _rig.global_position
 
-func _load_background(enemy_id: StringName) -> void:
-	var path := BattlePaths.background(enemy_id)
+func _load_background(background_name: StringName) -> void:
+	var path := BattlePaths.background(background_name)
 	if ResourceLoader.exists(path):
 		_background.texture = load(path) as Texture2D
 		return

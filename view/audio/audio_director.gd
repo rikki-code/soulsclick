@@ -11,6 +11,7 @@ const MUSIC_FADE_SECONDS := 1.2
 const SILENT_DB := -60.0
 const PAUSE_MUFFLE_HZ := 900.0
 const SAVE_DELAY_SECONDS := 0.6
+const TONAL_JITTER := 0.02
 
 var _bank: AudioBank
 var _voices: Array[AudioStreamPlayer] = []
@@ -20,6 +21,7 @@ var _music: Array[AudioStreamPlayer] = []
 var _music_active := 0
 var _music_name := &""
 var _muffled := false
+var _key_scale := 1.0
 var _save_timer: Timer
 
 func _ready() -> void:
@@ -70,8 +72,14 @@ func play(cue_name: StringName, pitch := 1.0, volume_db := 0.0) -> void:
 	_next_voice = (_next_voice + 1) % VOICES
 	voice.stream = cue.streams[randi() % cue.streams.size()]
 	voice.volume_db = cue.volume_db + volume_db
-	voice.pitch_scale = pitch * (1.0 + randf_range(-cue.pitch_jitter, cue.pitch_jitter))
+	var jitter := minf(cue.pitch_jitter, TONAL_JITTER) if cue.tonal else cue.pitch_jitter
+	var key := _key_scale if cue.tonal else 1.0
+	voice.pitch_scale = pitch * key * (1.0 + randf_range(-jitter, jitter))
 	voice.play()
+
+## Transposes tonal cues (SoundCue.tonal) by `semitones` to match the current music key; 0 = A minor.
+func set_key_shift(semitones: float) -> void:
+	_key_scale = pow(2.0, semitones / 12.0)
 
 func play_music(track: StringName) -> void:
 	if track == _music_name:

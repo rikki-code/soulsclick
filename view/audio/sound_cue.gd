@@ -8,3 +8,5 @@ extends Resource
 @export var pitch_jitter := 0.0
 ## Plays closer together than this are dropped: a burst of 20 identical events is one sound.
 @export var cooldown_msec := 0
+## Pitched in the music's key: the director multiplies its pitch by the realm key shift and keeps jitter tiny.
+@export var tonal := false

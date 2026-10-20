@@ -207,6 +207,7 @@ class Profile:
         return out
 
     music = {}
+    music_alias = {}
 
 class DefaultPack(Profile):
     name = "default"
@@ -257,8 +258,13 @@ class DefaultPack(Profile):
 
     music = {
         "menu": dict(bpm=50, kind="menu"),
-        "battle": dict(bpm=100, kind="battle"),
+        # battle_N: the menu harmony, ~40 s each, darker and heavier per floor (bars = 40 s worth at that tempo)
+        "battle_1": dict(bpm=72, kind="battle", level=0, shift=0),
+        "battle_2": dict(bpm=84, kind="battle", level=1, shift=-1),
+        "battle_3": dict(bpm=96, kind="battle", level=2, shift=-3),
+        "battle_4": dict(bpm=104, kind="battle", level=3, shift=-5),
     }
+    music_alias = {"battle": "battle_1"}  # old track name keeps working
 
 
 PROFILES = {p.name: p() for p in (DefaultPack,)}
@@ -360,12 +366,22 @@ def cue_ui_hover(P):
     return out
 
 
-def cue_attack(P):
-    """Player swing: whoosh, then a light impact on the end of it."""
-    out = swish(0.3, 500, 4200, 0.8, 0.6)
-    mix(out, tone(180, 0.1, 0.5, end_freq=90, decay=8), 0.21)
-    mix(out, lowpass(noise(0.05, 0.5, 30), 1800), 0.21)
-    return out
+def attack_variant(P, v):
+    """Player swing: a short swoosh that ends in a heavy meaty/metal hit (thump + crunchy mid transient + metallic ring)."""
+    at = (0.12, 0.14, 0.11)[v]
+    out = swish(at + 0.08, (700, 600, 800)[v], (4800, 4200, 5200)[v], 0.55, 0.85)
+    thump = drive(tone((118, 100, 88)[v], 0.26, 1.0, end_freq=52, decay=7), 1.8)
+    mix(thump, tone((70, 62, 66)[v], 0.3, 0.7, end_freq=42, decay=6))
+    mix(out, thump, at, 1.0)
+    body = lowpass(drive(noise(0.1, 1.0, 16), 2.5), 2600)  # meaty mid body
+    mix(out, body, at, 0.9)
+    crunch = highpass(drive(noise(0.07, 1.0, 22), 3.5), 1400)
+    mix(out, crunch, at + 0.004, 0.55)
+    mix(out, crackle(0.1, 160, 0.8, 3.0), at + 0.006, 0.45)
+    ring = modal((820, 960, 740)[v], (1, 2.76, 5.4, 8.9), (0.6, 0.45, 0.3, 0.15), (11, 15, 22, 34), 0.32, 0.004)
+    mix(out, ring, at + 0.004, 0.32)
+    mix(out, click(0.012, 2500, 1.0, 120), at, 0.6)
+    return reverb(out, 0.08, 0.4)
 
 
 def block_variant(P, v):
@@ -487,7 +503,7 @@ def cue_death(P):
 CUES = {
     "ui_click": (cue_ui_click, -6, 0.02, 20, 1),
     "ui_hover": (cue_ui_hover, -14, 0.04, 40, 1),
-    "attack": (cue_attack, -5, 0.04, 80, 1),
+    "attack": (attack_variant, 0, 0.04, 60, 3),
     "block": (block_variant, -4, 0.03, 80, 2),
     "parry": (parry_variant, -2, 0.02, 80, 3),
     "perfect_parry": (cue_perfect_parry, -1, 0.0, 80, 1),
@@ -504,20 +520,38 @@ CUES = {
 }
 
 
+# Cues played from recorded CC0 samples (Kenney, see view/packs/audio_pack/LICENSES.md) instead of synthesis.
+# name -> files under <pack>/sfx_rec/; the CUES row still gives volume/jitter/cooldown (its builder is unused).
+RECORDED = {
+    "attack": ["attack_1", "attack_2", "attack_3"],
+    "hit": ["hit_1", "hit_2"],
+    "block": ["block_1", "block_2"],
+    "parry": ["parry_1", "parry_2", "parry_3"],
+    "perfect_parry": ["perfect_parry_1"],
+    "guard_break": ["guard_break_1", "guard_break_2"],
+    "enemy_telegraph": ["enemy_telegraph_1", "enemy_telegraph_2", "enemy_telegraph_3"],
+    "telegraph_heavy": ["telegraph_heavy_1", "telegraph_heavy_2"],
+    "feint": ["feint_1", "feint_2"],
+}
+
+# Recorded cues retuned by tools/sfx_prep.py to A/C/E: the director transposes them with the realm's key shift.
+TONAL = {"attack", "block", "parry", "perfect_parry", "guard_break", "enemy_telegraph", "telegraph_heavy"}
+TONAL_JITTER = 0.015
+
+
 # ---- Music ------------------------------------------------------------------
 
 M, S, D = (0, 7, 12, 15), (0, 7, 12, 14), (0, 7, 12, 16)  # minor, sus, major triad shapes
-PROGRESSIONS = {
+PROGRESSIONS = {  # battle tracks reuse the menu progression
     "menu": [(45, M), (41, D), (43, S), (40, M), (45, M), (46, D), (41, D), (40, D), (45, M), (48, D), (43, D), (40, M)],
-    "battle": [(45, M), (45, M), (41, D), (40, D), (45, M), (43, D), (41, D), (40, M),
-               (45, M), (46, D), (45, M), (41, D), (43, D), (40, D), (46, D), (40, D)],
 }
+
 SCALE = (0, 3, 5, 7, 10, 12, 15)  # A minor pentatonic-ish, for the sparse melody
 
 
 def bass_note(root):
     b = root - 12
-    while b < 33:
+    while b < 31:
         b += 12
     return b
 
@@ -539,42 +573,100 @@ def drone(loop_len, midi_root):
     return [x * (0.78 + 0.22 * math.sin(lfo * i)) for i, x in enumerate(out)]
 
 
+def formant(buf, f, bw, gain=1.0):
+    r = math.exp(-math.pi * bw / SR)
+    a1, a2 = -2 * r * math.cos(TAU * f / SR), r * r
+    y1 = y2 = 0.0
+    out = []
+    for x in buf:
+        y = (1 - r) * x - a1 * y1 - a2 * y2
+        y2, y1 = y1, y
+        out.append(y * gain)
+    return out
+
+
+def choir(freqs, dur, vowel):
+    """Choir-like pad: detuned saws with slow vibrato through two vowel formants, slow swell in and out."""
+    n = int(dur * SR)
+    src = silence(dur)
+    for f in freqs:
+        for d in (-0.006, 0.0, 0.007):
+            mix(src, tone(f * (1 + d), dur, 0.4, "saw", decay=0.0, attack=0.0, vibrato=0.004))
+    f1, f2 = vowel
+    out = formant(src, f1, 110, 1.0)
+    mix(out, formant(src, f2, 140, 0.8))
+    top = max(abs(x) for x in out) or 1.0
+    att, rel = int(n * 0.4), int(n * 0.45)
+    for i in range(n):
+        env = min(1.0, i / att) if i < att else 1.0
+        if i > n - rel:
+            env *= 0.5 - 0.5 * math.cos(math.pi * (n - i) / rel)
+        out[i] = out[i] / top * 0.5 * (0.5 - 0.5 * math.cos(math.pi * env))
+    return out
+
+
+VOWELS = ((720, 1100), (460, 800), (300, 2200))  # ah, oh, ee
+
+
 def render_music(P, name, seed):
     rng = random.Random(seed)
     cfg = P.music[name]
-    kind = cfg["kind"]
-    chords = PROGRESSIONS[kind]
-    battle = kind == "battle"
+    battle = cfg["kind"] == "battle"
+    chords = PROGRESSIONS["menu"]
+    level = cfg.get("level", 0)
+    shift = cfg.get("shift", 0)
     beat = 60.0 / cfg["bpm"]
     bar = 4 * beat
-    bars = len(chords)
+    bars = round(40.0 / bar) if battle else len(chords)
     loop_len = int(bars * bar * SR)
     out = silence(bars * bar)
     for b in range(bars):
-        root, iv = chords[b]
+        root, iv = chords[b % len(chords)]
+        root += shift
         t0 = b * bar
-        pad_at = t0 - bar * 0.25 + (bars * bar if b == 0 else 0.0)  # the first pad starts "before" the loop: wrap it to the end
+        wrap = bars * bar if b == 0 else 0.0  # the first pad starts "before" the loop: wrap it to the end
+        pad_at = t0 - bar * 0.25 + wrap
         for k, step in enumerate((iv[0], iv[1], iv[3])):
             mix(out, string_pad(midi(root + 12 + step), bar * 1.5, bar * 0.5), pad_at, 0.13 if k < 2 else 0.09)
         bass = bass_note(root)
         if battle:
+            mix(out, choir([midi(root + 12 + iv[0]), midi(root + 12 + iv[1]), midi(root + 12 + iv[3]), midi(root)], bar * 1.5, VOWELS[(b + level) % 2 if b % 6 != 5 else 2]),
+                pad_at, 0.16 + 0.07 * level)
+            mix(out, P.bass(midi(bass), bar * 0.9), t0, 0.34)
+            steps = (0, 4) if level == 0 else tuple(range(8))
+            hit_p = (1.0, 0.6, 0.85, 1.0)[level]
             for s in range(8):
-                if s == 0 or rng.random() < 0.55:
-                    mix(out, P.bass(midi(bass + (12 if s in (3, 7) and rng.random() < 0.3 else 0)), beat * 0.45), t0 + s * beat / 2, 0.34 if s == 0 else 0.22)
-            mix(out, taiko(1.0), t0, 0.7)
-            if rng.random() < 0.55:
+                if s in steps and (s == 0 or rng.random() < hit_p):
+                    up = 12 if s in (3, 7) and rng.random() < 0.3 * level else 0
+                    mix(out, P.bass(midi(bass + up), beat * 0.45), t0 + s * beat / 2, 0.3 if s == 0 else 0.18)
+            # percussion grows per floor: level 0 slow taiko, 3 relentless
+            mix(out, taiko(1.0, 1.0 - 0.06 * level), t0, 0.7)
+            if level >= 1 or b % 2:
+                mix(out, taiko(0.6, 1.15), t0 + 2 * beat, 0.4)
+            if level >= 1 and rng.random() < 0.6:
                 mix(out, taiko(0.7, 1.15), t0 + 2.5 * beat, 0.4)
+            if level >= 2:
+                for beat_i in (1, 3):
+                    mix(out, taiko(0.55, 1.25), t0 + beat_i * beat, 0.4)
+                mix(out, taiko(0.5, 1.3), t0 + 3.5 * beat, 0.4)
+            if level >= 3:
+                for k in range(4):
+                    mix(out, taiko(0.4, 0.9 + 0.1 * (k % 2)), t0 + (k + 0.5) * beat, 0.35)
             if b % 4 == 3:
-                for k in range(3):
-                    mix(out, taiko(0.6, 1.3), t0 + (3 + k / 3) * beat, 0.4)
-            for beat_i in (1, 3):
-                if rng.random() < 0.45:
-                    mix(out, click(0.03, 3500, 0.6, 50), t0 + beat_i * beat, 0.12)
-            if b % 8 == 0:
-                mix(out, gong(midi(bass + 12), 3.0), t0, 0.22)
+                for k in range(3 + level):
+                    mix(out, taiko(0.6, 1.3), t0 + (3 + k / (3 + level)) * beat, 0.4)
+            ticks = (1, 3) if level < 2 else (0.5, 1.5, 2.5, 3.5)
+            for beat_i in ticks:
+                if rng.random() < 0.3 + 0.2 * level:
+                    mix(out, click(0.03, 3500, 0.6, 50), t0 + beat_i * beat, 0.1 + 0.03 * level)
+            if rng.random() < 0.5 - 0.1 * level:
+                pitch = root + 12 + rng.choice(SCALE)
+                mix(out, lowpass(bell(midi(pitch), 3.0, 1.0, 2.0, 0.5, 3.0), 2000), t0 + rng.choice((0.0, 1.0, 2.0)) * beat, 0.18)
+            if b % (6 - level) == 3 or (level >= 2 and b % 6 == 0):
+                mix(out, gong(midi(bass + 12), 3.5), t0, 0.2 + 0.03 * level)
             if b % 8 == 6:
                 swell = sweep_lowpass(noise(2 * bar, 1.0, 0.0), 200, 3500)
-                mix(out, [x * (i / len(swell)) ** 2 for i, x in enumerate(swell)], t0, 0.25)
+                mix(out, [x * (i / len(swell)) ** 2 for i, x in enumerate(swell)], t0, 0.2 + 0.05 * level)
         else:
             mix(out, P.bass(midi(bass), bar * 0.9), t0, 0.4)
             if rng.random() < 0.4:
@@ -586,10 +678,21 @@ def render_music(P, name, seed):
     for i in range(loop_len, len(out)):
         out[i - loop_len] += out[i]
     out = out[:loop_len]
-    d = drone(loop_len, 33)
+    d = drone(loop_len, 33 + shift)
     gain = 0.35 if battle else 0.45
     out = [x + y * gain for x, y in zip(out, d)]
-    return normalize(out, 0.8)
+    out = normalize(out, 0.8)
+    if battle:
+        out = normalize(drive(out, 1.8 + 0.3 * level), 0.8)  # glue the percussion peaks down: heavier, louder body
+        return downsample2(out)
+    return out
+
+
+def downsample2(buf):
+    """Halve the rate (smaller files): low-pass on a tripled copy so the loop seam stays clean, keep every second sample."""
+    n = len(buf)
+    low = lowpass(lowpass(buf * 3, 4800), 4800)
+    return low[n:2 * n:2]
 
 
 def normalize(buf, peak):
@@ -619,12 +722,12 @@ compress/mode=2
 """
 
 
-def write_wav(buf, path, loop=False):
+def write_wav(buf, path, loop=False, rate=SR):
     path.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
-        w.setframerate(SR)
+        w.setframerate(rate)
         w.writeframes(b"".join(struct.pack("<h", int(max(-1.0, min(1.0, x)) * 32767)) for x in buf))
     # import loop_mode 2 = forward (music); 0 = as stored in the wav, i.e. none (cues)
     path.with_name(path.name + ".import").write_text(IMPORT_TEMPLATE.format(loop=2 if loop else 0))
@@ -642,9 +745,16 @@ def build_pack(P):
     folder = OUT / f"{P.name}_pack"
     for stale in (folder / "sfx").glob("*.wav*"):
         stale.unlink()
+    for stale in (folder / "music").glob("*.wav*"):
+        stale.unlink()
     cue_files = {}
     for name, (builder, _, _, _, variants) in CUES.items():
         files = []
+        if name in RECORDED:
+            cue_files[name] = [f"sfx_rec/{n}.wav" for n in RECORDED[name]]
+            for f in cue_files[name]:
+                assert (folder / f).exists(), f"missing recorded sample {f}"
+            continue
         for v in range(variants):
             buf = trim_tail(finish(builder(P, v) if variants > 1 else builder(P)))
             suffix = f"_{v + 1}" if variants > 1 else ""
@@ -653,8 +763,11 @@ def build_pack(P):
         cue_files[name] = files
     music_files = {}
     for index, kind in enumerate(P.music):
-        write_wav(render_music(P, kind, 100 + index), folder / "music" / f"{kind}.wav", loop=True)
+        buf = render_music(P, kind, 100 + index)
+        write_wav(buf, folder / "music" / f"{kind}.wav", loop=True, rate=SR if P.music[kind]["kind"] == "menu" else SR // 2)
         music_files[kind] = f"music/{kind}.wav"
+    for alias, target in P.music_alias.items():
+        music_files[alias] = music_files[target]
     write_bank(P, folder, cue_files, music_files)
     print(f"{P.name}: {len(cue_files)} cues, {len(music_files)} tracks")
 
@@ -666,19 +779,23 @@ def write_bank(P, folder, cue_files, music_files):
         '[ext_resource type="Script" path="res://view/audio/audio_bank.gd" id="bank"]',
         '[ext_resource type="Script" path="res://view/audio/sound_cue.gd" id="cue"]',
     ]
-    for files in list(cue_files.values()) + [[f] for f in music_files.values()]:
+    for files in list(cue_files.values()) + [sorted(set(music_files.values()))]:
         for f in files:
             lines.append(f'[ext_resource type="AudioStream" path="{RES_PREFIX}{P.name}_pack/{f}" id="{f}"]')
     lines.append("")
     for name, files in cue_files.items():
         _, volume, jitter, cooldown, _ = CUES[name]
         refs = ", ".join(f'ExtResource("{f}")' for f in files)
+        tonal = name in TONAL
+        if tonal:
+            jitter = min(jitter, TONAL_JITTER)
         lines += [
             f'[sub_resource type="Resource" id="cue_{name}"]',
             'script = ExtResource("cue")',
             f"streams = Array[AudioStream]([{refs}])",
             f"volume_db = {float(volume)}",
             f"pitch_jitter = {jitter}",
+            f"tonal = {str(tonal).lower()}",
             f"cooldown_msec = {cooldown}",
             "",
         ]
@@ -686,7 +803,7 @@ def write_bank(P, folder, cue_files, music_files):
     music = ", ".join(f'"{k}": ExtResource("{f}")' for k, f in music_files.items())
     lines += ["[resource]", 'script = ExtResource("bank")', f"cues = {{{cues}}}", f"music = {{{music}}}", ""]
     (folder / "sound_bank.tres").write_text("\n".join(lines))
-    (folder / "LICENSE.txt").write_text("Generated by tools/gen_audio.py from synthesized waveforms only. CC0 / public domain.\n")
+    (folder / "LICENSE.txt").write_text("Synthesized by tools/gen_audio.py, plus recorded samples in sfx_rec/ (Kenney, CC0); see ../LICENSES.md. All CC0 / public domain.\n")
 
 
 if __name__ == "__main__":

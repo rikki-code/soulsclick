@@ -4,6 +4,9 @@ extends RefCounted
 
 const PATHS: Array[String] = [
 	"res://data/realms/realm_1.tres",
+	"res://data/realms/realm_2.tres",
+	"res://data/realms/realm_3.tres",
+	"res://data/realms/realm_4.tres",
 ]
 
 static func default_realms() -> Array[RealmDefinition]:

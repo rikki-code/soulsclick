@@ -12,6 +12,9 @@ const SAVE_HALF_RATE := 0.5
 const SCREEN_FLAG := "--screen="
 const DEPTH_SOURCE := &"depth"
 const BEST_DEPTH := &"best_depth"
+const REALM_BACKGROUNDS := 4
+## Semitone shift of each realm's battle theme (gen_audio battle_1..4); tonal SFX follow it.
+const REALM_KEY_SHIFTS: Array[float] = [0.0, -1.0, -3.0, -5.0]
 ## Pause between the death of a wave enemy and the next one stepping in.
 const WAVE_PAUSE := 0.8
 
@@ -357,6 +360,7 @@ func _start_fight(plan: RoomPlan) -> void:
 		_screen.queue_free()
 		_screen = null
 	_view = BattleView.new()
+	_view.background_id = _realm_background(plan)
 	add_child(_view)
 	_view.continue_pressed.connect(_on_victory_continue)
 	_view.revive_pressed.connect(_on_revive)
@@ -379,13 +383,20 @@ func _start_fight(plan: RoomPlan) -> void:
 	_view.begin(_view_definition(plan, 0), _duel.enemy, _duel.player)
 	_sync_view_shop()
 	_set_gameplay(true)
-	Audio.play_music(&"battle")
+	var realm_slot := _run.depth % REALM_BACKGROUNDS
+	Audio.play_music(StringName("battle_%d" % (realm_slot + 1)))
+	Audio.set_key_shift(REALM_KEY_SHIFTS[realm_slot])
 
 ## Duel against the wave's enemy `index`, fought by `player` (the same Fighter all wave long).
 func _make_duel(plan: RoomPlan, index: int, player: Fighter) -> Duel:
 	var duel := Duel.new(_tuning, plan.enemy_at(index), plan.combat_seed + index, plan.combat_level, player)
 	_apply_room_scaling(duel.enemy, plan, index)
 	return duel
+
+## Realm backgrounds cycle with depth (realm_1..realm_4); boss rooms use the realm's boss set.
+func _realm_background(plan: RoomPlan) -> StringName:
+	var realm_number := _run.depth % REALM_BACKGROUNDS + 1
+	return StringName("realm_%d%s" % [realm_number, "_boss" if plan.kind_id == BossRoom.ID else ""])
 
 func _apply_room_scaling(enemy: Fighter, plan: RoomPlan, index := 0) -> void:
 	for affix_id in plan.affixes_at(index):

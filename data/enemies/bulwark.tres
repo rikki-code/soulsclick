@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/attack_step_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="h1"]
+script = ExtResource("2")
+kind_id = &"heavy"
+telegraph_time = 1.2
+damage_scale = 1.9
+recovery_time = 1.1
+
+[sub_resource type="Resource" id="q1"]
+script = ExtResource("2")
+kind_id = &"quick"
+telegraph_time = 0.7
+damage_scale = 0.9
+recovery_time = 0.9
+
+[sub_resource type="Resource" id="h2"]
+script = ExtResource("2")
+kind_id = &"heavy"
+telegraph_time = 1.1
+damage_scale = 1.9
+recovery_time = 1.0
+
+[sub_resource type="Resource" id="f1"]
+script = ExtResource("2")
+kind_id = &"feint"
+telegraph_time = 0.9
+recovery_time = 0.4
+imitates = &"heavy"
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+kind_id = &"combo"
+telegraph_times = PackedFloat32Array(0.6, 0.5)
+damage_scale = 0.9
+strike_gap = 0.1
+recovery_time = 1.2
+
+[resource]
+script = ExtResource("1")
+id = &"bulwark"
+name_key = "ENEMY_BULWARK"
+hp = 400
+damage = 22
+pattern = Array[ExtResource("2")]([SubResource("h1"), SubResource("q1"), SubResource("h2"), SubResource("f1"), SubResource("c1")])
+palette_tag = &"bell"
+souls_reward = 45
+opening_delay = 1.8
+post_stagger_delay = 0.9

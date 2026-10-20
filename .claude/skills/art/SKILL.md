@@ -28,6 +28,9 @@ description: >
 | `hound` | `#ff9a1f` | Chain Hound: low crouched wolf-eared skirmisher, spiked collar, chain bandolier, tail, hooked sickle with a chain tail; ~60% of canvas height |
 | `dancer` | `#b57bff` | Veil Dancer: tall slender masked duelist, long crown tines, trailing veil strips and skirt, thin curved saber; narrowest silhouette |
 | `bulwark` | `#e3c66a` | Bell Bulwark: squat bell-shaped giant, bell helm with loop, tower shield (extra part `shield`, child of `forearm_l`, world angle set with `hold`), bell-headed mace (bell mouth glows) |
+| `pilgrim` | `#2fe0b8` | Flayed Pilgrim (deeper floors, grimmer): gaunt hunched flayed husk, hollow skull with long jaw, torn wide flat-crown hat with nails, shoulder thorns, rag robe; long hook-staff (poison-teal glow on the inner crook edge); ~75% height |
+| `hangman` | `#d0452b` | Hanged Executioner (dark rust red, close to warden's red but duller): huge sack-hooded brute, stitched mouth, noose rope coiled on the neck with a frayed tail and loop rising beside the hood, chains across the chest, spiked iron pauldron, giant notched cleaver (edge glows) with a punched hole and spiked spine |
+| `wretch` | `#e9e2c6` | Reliquary Wretch (pale bone): low wide crawling husk, bone cage grown on its back with pale shards (part `core`), hollow skull with rusted nail crown and lank hair, FOUR extra spider arms (parts `arm_x1..x4`, children of `body`, only `rot` in poses: x1/x2 arch up, x3/x4 reach out low), rake of four nail-blades as weapon; ~60% height |
 
 Realm I roster mapping (run_and_progression 3.3): grunt = Hollow Soldier basics, hound = Chain Hound, bulwark =
 Bell Warden (heavies), dancer = Veil Dancer (feints); knight = elite-weight enemy; warden = elite/mini-boss. All 12
@@ -38,8 +41,11 @@ poses exist for every enemy, so any attack kind works; the poses are DRAWN FOR (
 | `hound` | yes (sickle drawn back low, pounce slash) | leap: sickle overhead, slam | yes (crouch, head twitch, sickle raised right) | yes, best (sweep left then right) | fast phrases, short telegraphs, stamina test |
 | `bulwark` | shield bash side-swipe | yes, best (mace overhead, bell mouth glows) | yes (shield dips, mace lifted slowly) | yes (mace back-hand left, shield-swung right) | slow, long heavy telegraph, parry-only enemy |
 | `dancer` | yes (saber drawn back to the side) | thrust/slam: saber high, lunge | yes, best (saber low and tilted, head tilt) | yes (saber sweep out left, then right) | patient phrases with feints |
+| `pilgrim` | yes (hook drawn back to the right, then hooking sweep left) | hook raised over the head, slam down | yes (hook low and tilted, head tilted) | yes, best (hook swept out low left, then right; hand grips staff two-handed) | combo-heavy phrases, medium speed |
+| `hangman` | cleaver drawn back to the right, flat chop across | yes, best (cleaver high over the hood, slam) | yes (cleaver lifted slowly, head tilt) | yes (cleaver swung left, back-hand right) | very slow, long telegraphs, big hits; stagger-punishable |
+| `wretch` | yes (rake drawn back, upper arms flared, lunge) | leap: rake overhead with all arms spread, slam | yes, best (rake low, one upper spider arm curls high and twitches, head tilt) | yes (rake out low left, then right, upper arms swap) | unpredictable, mixes feints and quick hits |
 
-Windup silhouettes are unique per enemy: hound = curved blade out to the side with a low crouch; dancer = long thin
+Windup silhouettes are unique per enemy: pilgrim = long staff with teal crook, tall flat hat; hangman = huge slab cleaver and a rope loop above the hood; wretch = spider arms flared around a bone cage and a fan of nail-blades; hound = curved blade out to the side with a low crouch; dancer = long thin
 blade, narrow body, saber hand held low for feints; bulwark = shield stays up, mace head (bell) goes above the helm.
 ## Files
 
@@ -49,9 +55,18 @@ blade, narrow body, saber hand held low for feints; bulwark = shield stays up, m
   canvas (1024 square, feet at y~975) is meant to sit with its top-left at bg (28, 560).
 - Scratch (not shipped, each has a `.gdignore`; also exclude them in export filters): `_previews/` (PNG/SVG
   output of the preview tool) and `_src/` (Python generator of the parts and rig.json).
+- pilgrim/hangman/wretch have NO background yet (previews use a flat `#1a1f29`); suggested kinds: ash-grey processional hall (pilgrim), gallows yard (hangman), ossuary/reliquary crypt (wretch).
 - Backgrounds so far: `grunt` moon courtyard, `knight` nave, `warden` ring gate, `hound` kennel yard with
   chains, `dancer` hall of hanging drapes, `bulwark` belfry. `_src/bg.py` `make(..., kind)`; kinds: moon, nave,
   ring, chains, veil, bell.
+- Backgrounds by realm (game picks these; fall back to the per-enemy file if missing): `realm_<n>.svg` = normal rooms,
+  `realm_<n>_boss.svg` = boss room, n = 1..4. Same 1080x1920 canvas, ground y~1500, calm centre for the enemy.
+  1 `realm_1*` (copies of `knight` nave / `warden` ring gate; per-enemy files stay), 2 Drowned Crypt (cold teal, flooded
+  arches, hanging chains, boss: sunken gate + anchor), 3 Bone Cathedral (pale bone on brown-black, ribbed vaults,
+  candles, boss: rib-cage nave + spine), 4 Ashen Abyss (black-red, broken bridges over a void, rising embers, boss:
+  black sun). Generator `view/packs/background_pack/silhouette_pack/_src/realms.py` (`python3 realms.py` rewrites
+  realms 2-4 and re-copies realm 1); realms 2-4 are not hand-edit safe. Preview: `tools/svg_to_png.gd -- --list jobs.txt`
+  into `background_pack/silhouette_pack/_previews/` (scratch, `.gdignore`).
 - Part names: `legs`, `body`, `head`, `eyes`, `arm_l`, `forearm_l`, `arm_r`, `forearm_r`, `weapon`
   (+ `core`, `chain`, `ball` for the warden, `shield` for the bulwark). Hierarchy: body -> head -> eyes; body -> arm -> forearm
   -> weapon (-> chain -> ball). `legs` and `body` are roots with the pivot at the hips (death pose rotates both).

@@ -152,3 +152,9 @@ CROSSROADS_TITLE,The boss has fallen,Босс повержен
 CROSSROADS_HINT,"End the journey and keep every soul, or go deeper: enemies grow stronger, and death takes everything.","Завершите путешествие и сохраните все души — или идите глубже: враги станут сильнее, а смерть заберёт всё."
 CROSSROADS_RETIRE,End the journey (+%d embers),Завершить путешествие (+%d углей)
 CROSSROADS_DEEPER,Go deeper (depth %d),Идти глубже (глубина %d)
+ENEMY_PILGRIM,Flayed Pilgrim,Освежёванный паломник
+ENEMY_HANGMAN,Hanged Executioner,Повешенный палач
+ENEMY_WRETCH,Reliquary Wretch,Реликварная тварь
+REALM_2,Drowned Crypt,Затопленный склеп
+REALM_3,Bone Cathedral,Костяной собор
+REALM_4,Ashen Abyss,Пепельная бездна

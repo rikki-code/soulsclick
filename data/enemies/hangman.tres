@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/attack_step_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="h1"]
+script = ExtResource("2")
+kind_id = &"heavy"
+telegraph_time = 1.3
+damage_scale = 2.0
+recovery_time = 1.2
+
+[sub_resource type="Resource" id="q1"]
+script = ExtResource("2")
+kind_id = &"quick"
+telegraph_time = 0.8
+damage_scale = 0.9
+recovery_time = 1.0
+
+[sub_resource type="Resource" id="h2"]
+script = ExtResource("2")
+kind_id = &"heavy"
+telegraph_time = 1.2
+damage_scale = 2.1
+recovery_time = 1.1
+
+[sub_resource type="Resource" id="f1"]
+script = ExtResource("2")
+kind_id = &"feint"
+telegraph_time = 1.0
+recovery_time = 0.4
+imitates = &"heavy"
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+kind_id = &"combo"
+telegraph_times = PackedFloat32Array(0.7, 0.5)
+damage_scale = 0.9
+strike_gap = 0.1
+recovery_time = 1.3
+
+[resource]
+script = ExtResource("1")
+id = &"hangman"
+name_key = "ENEMY_HANGMAN"
+hp = 650
+damage = 24
+pattern = Array[ExtResource("2")]([SubResource("h1"), SubResource("q1"), SubResource("h2"), SubResource("f1"), SubResource("c1")])
+palette_tag = &"gallows"
+souls_reward = 90
+opening_delay = 1.6
+post_stagger_delay = 1.0
