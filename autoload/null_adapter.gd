@@ -2,16 +2,27 @@
 class_name NullAdapter
 extends PlatformAdapter
 
-const FAKE_AD_SECONDS := 0.15
+const AD_LAYER := 100
+
+## Debug builds and the web demo have no portal SDK yet: the "ad" is the FakeAd animation.
+static func _fake_ads() -> bool:
+	return OS.is_debug_build() or OS.has_feature("web")
 
 func id() -> StringName:
 	return &"null"
 
 func show_rewarded() -> bool:
-	if not OS.is_debug_build():
+	if not _fake_ads():
 		return false
-	await _wait(FAKE_AD_SECONDS)
+	var layer := CanvasLayer.new()
+	layer.layer = AD_LAYER
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	var ad := FakeAd.new()
+	layer.add_child(ad)
+	(Engine.get_main_loop() as SceneTree).root.add_child(layer)
+	await ad.finished
+	layer.queue_free()
 	return true
 
 func is_rewarded_available() -> bool:
-	return OS.is_debug_build()
+	return _fake_ads()

@@ -95,6 +95,21 @@ func fade_out(time: float) -> void:
 	_kill(_breath)
 	create_tween().tween_property(self, "modulate:a", FADED_ALPHA, time)
 
+## Direct rotation of one part (degrees), for scripted gestures; no-op when the rig lacks it.
+func set_part_rotation(part_id: StringName, degrees: float) -> void:
+	var node: Node2D = _nodes.get(part_id)
+	if node != null:
+		node.rotation_degrees = degrees
+
+## Moves one part from its resting position by `offset` (rig pixels), for scripted gestures; (0, 0) puts it back.
+func shift_part(part_id: StringName, offset: Vector2) -> void:
+	var node: Node2D = _nodes.get(part_id)
+	if node == null:
+		return
+	if not node.has_meta(&"rest"):
+		node.set_meta(&"rest", node.position)
+	node.position = (node.get_meta(&"rest") as Vector2) + offset
+
 func part_center(part_id: StringName) -> Vector2:
 	var node: Node2D = _nodes.get(part_id, _holder)
 	return node.global_position

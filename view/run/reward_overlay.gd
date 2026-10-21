@@ -46,6 +46,7 @@ const TAG_DEFAULT_COLOR := Color(0.9, 0.8, 0.5)
 var _offer: RewardOffer
 var _picked := false
 var _row: HBoxContainer
+var _box: VBoxContainer
 
 func setup(offer: RewardOffer) -> RewardOverlay:
 	_offer = offer
@@ -62,6 +63,7 @@ func setup(offer: RewardOffer) -> RewardOverlay:
 	box.add_theme_constant_override("separation", TITLE_GAP)
 	box.custom_minimum_size.x = 1080 - 2 * MARGIN
 	center.add_child(box)
+	_box = box
 	var title := MenuKit.label(tr("REWARD_TITLE"), TITLE_SIZE)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(title)
@@ -82,6 +84,14 @@ func _ready() -> void:
 	await get_tree().process_frame
 	if _row == null:
 		return
+	# The real canvas width depends on the device (scale factor, aspect): fit the cards to it, centered.
+	var usable := size.x - 2.0 * MARGIN
+	if usable > 0.0 and _box != null:
+		_box.custom_minimum_size.x = usable
+		var count := maxi(_row.get_child_count(), 1)
+		var width := minf(floorf((usable - CARD_SEPARATION * (count - 1)) / count), CARD_WIDTH)
+		for card: Control in _row.get_children():
+			card.custom_minimum_size.x = width
 	var tallest := CARD_HEIGHT
 	for card: Control in _row.get_children():
 		var column: Control = card.get_child(card.get_child_count() - 1)
