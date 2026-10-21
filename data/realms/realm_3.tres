@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/enemies/dancer.tres" id="11"]
 [ext_resource type="Resource" path="res://data/enemies/hangman.tres" id="12"]
 [ext_resource type="Resource" path="res://data/enemies/pilgrim.tres" id="13"]
+[ext_resource type="Resource" path="res://data/enemies/gargoyle.tres" id="14"]
 [ext_resource type="Resource" path="res://data/realms/depth_curve.tres" id="7"]
 
 [sub_resource type="Resource" id="step_1"]
@@ -15,27 +16,27 @@ kind_weights = {
 &"fight": 1.0
 }
 door_count_weights = {
-2: 1.0
+1: 1.0
 }
 
 [sub_resource type="Resource" id="step_2"]
 script = ExtResource("2")
 kind_weights = {
-&"fight": 2.0,
-&"altar": 1.0
+&"fight": 1.0
 }
-required_kinds = Array[StringName]([&"altar"])
 door_count_weights = {
-2: 1.0
+1: 1.0
 }
+wave_bonus = 1
 
 [sub_resource type="Resource" id="step_3"]
 script = ExtResource("2")
 kind_weights = {
-&"elite": 1.0,
-&"fight": 2.0
+&"fight": 2.0,
+&"altar": 1.0,
+&"elite": 1.0
 }
-required_kinds = Array[StringName]([&"elite"])
+required_kinds = Array[StringName]([&"altar"])
 door_count_weights = {
 2: 1.0
 }
@@ -46,43 +47,93 @@ kind_weights = {
 &"fight": 1.0
 }
 door_count_weights = {
-2: 1.0
+1: 1.0
 }
 
 [sub_resource type="Resource" id="step_5"]
 script = ExtResource("2")
 kind_weights = {
-&"bonfire": 1.0,
 &"fight": 1.0
 }
-required_kinds = Array[StringName]([&"bonfire"])
 door_count_weights = {
-2: 1.0
+1: 1.0
 }
+wave_bonus = 1
 
 [sub_resource type="Resource" id="step_6"]
 script = ExtResource("2")
 kind_weights = {
+&"fight": 2.0,
 &"elite": 1.0,
-&"altar": 1.0,
-&"fight": 2.0
+&"altar": 1.0
 }
-required_kinds = Array[StringName]([&"altar"])
+required_kinds = Array[StringName]([&"elite"])
 door_count_weights = {
-2: 1.0
+2: 1.0,
+3: 1.0
 }
 
 [sub_resource type="Resource" id="step_7"]
 script = ExtResource("2")
 kind_weights = {
-&"fight": 1.0,
-&"elite": 1.0
+&"fight": 1.0
 }
 door_count_weights = {
-2: 1.0
+1: 1.0
 }
 
 [sub_resource type="Resource" id="step_8"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 1.0
+}
+door_count_weights = {
+1: 1.0
+}
+wave_bonus = 1
+
+[sub_resource type="Resource" id="step_9"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 2.0,
+&"bonfire": 1.0,
+&"elite": 1.0
+}
+required_kinds = Array[StringName]([&"bonfire"])
+door_count_weights = {
+3: 1.0
+}
+
+[sub_resource type="Resource" id="step_10"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 1.0
+}
+door_count_weights = {
+1: 1.0
+}
+
+[sub_resource type="Resource" id="step_11"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 1.0
+}
+door_count_weights = {
+1: 1.0
+}
+wave_bonus = 1
+
+[sub_resource type="Resource" id="step_12"]
+script = ExtResource("2")
+kind_weights = {
+&"fight": 1.0
+}
+door_count_weights = {
+1: 1.0
+}
+wave_bonus = 2
+
+[sub_resource type="Resource" id="step_13"]
 script = ExtResource("2")
 kind_weights = {
 &"boss": 1.0
@@ -116,13 +167,19 @@ enemy = ExtResource("12")
 weight = 1.0
 affixes = Array[StringName]([&"swift", &"plated"])
 
+[sub_resource type="Resource" id="fight_gargoyle"]
+script = ExtResource("3")
+enemy = ExtResource("14")
+weight = 3.0
+affixes = Array[StringName]([&"swift", &"plated"])
+
 [resource]
 script = ExtResource("1")
 id = &"realm_3"
 name_key = "REALM_3"
 palette_tag = &"bone"
-step_rules = Array[ExtResource("2")]([SubResource("step_1"), SubResource("step_2"), SubResource("step_3"), SubResource("step_4"), SubResource("step_5"), SubResource("step_6"), SubResource("step_7"), SubResource("step_8")])
-fight_pool = Array[ExtResource("3")]([SubResource("fight_dancer"), SubResource("fight_pilgrim"), SubResource("fight_bulwark")])
+step_rules = Array[ExtResource("2")]([SubResource("step_1"), SubResource("step_2"), SubResource("step_3"), SubResource("step_4"), SubResource("step_5"), SubResource("step_6"), SubResource("step_7"), SubResource("step_8"), SubResource("step_9"), SubResource("step_10"), SubResource("step_11"), SubResource("step_12"), SubResource("step_13")])
+fight_pool = Array[ExtResource("3")]([SubResource("fight_dancer"), SubResource("fight_pilgrim"), SubResource("fight_bulwark"), SubResource("fight_gargoyle")])
 elite_pool = Array[ExtResource("3")]([SubResource("elite_hangman")])
 boss = ExtResource("12")
 depth_curve = ExtResource("7")

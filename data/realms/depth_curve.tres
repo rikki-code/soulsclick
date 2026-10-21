@@ -4,3 +4,7 @@
 
 [resource]
 script = ExtResource("1")
+hp_growth = 1.09
+damage_growth = 1.12
+boss_hp_factor = 1.0
+boss_damage_factor = 1.0

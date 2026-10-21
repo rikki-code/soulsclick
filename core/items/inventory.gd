@@ -59,6 +59,14 @@ func buy(def: ItemDefinition, souls: int) -> int:
 			_apply(def.id)
 	return souls - price
 
+## Adds charges of a consumable without paying (reward). False for an unknown / non-consumable id or a full stack.
+func grant(item_id: StringName, amount := 1) -> bool:
+	var def := ItemCatalog.get_def(item_id) as ConsumableItem
+	if def == null or amount <= 0 or charges(item_id) >= def.max_charges:
+		return false
+	consumables[item_id] = mini(charges(item_id) + amount, def.max_charges)
+	return true
+
 func take_charge(item_id: StringName) -> ConsumableItem:
 	if charges(item_id) <= 0:
 		return null

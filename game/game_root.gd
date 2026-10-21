@@ -17,19 +17,49 @@ const REALM_BACKGROUNDS := 4
 const REALM_KEY_SHIFTS: Array[float] = [0.0, -1.0, -3.0, -5.0]
 ## Pause between the death of a wave enemy and the next one stepping in.
 const WAVE_PAUSE := 0.8
+## A consumable tapped while the player is busy waits this long for a free moment.
+const ITEM_QUEUE_SECONDS := 0.8
+## How long the "Victory" banner stands before the reward cards (or the next room) come.
+const VICTORY_BANNER := 1.0
+## Road walks between rooms: through a single door, to the fork, from the fork into the chosen trail.
+const WALK_SECONDS := 1.4
+const FORK_WALK_SECONDS := 0.9
+## "Deeper" after a boss: the walk that blends the road into the next realm.
+const REALM_WALK_SECONDS := 2.5
+const TRAIL_ARRIVE_TIMEOUT := 4.0
+const OVERLAY_LAYER := 20
+const OVERLAY_DIM := 0.8
 
 var _tuning: CombatTuning
 var _run: Run
 var _run_levels: StatLevels
 var _inventory := Inventory.new()
+var _reward_ctx: RewardContext
+## The view shows the next step's fork far ahead on the road (previewed at fight start).
+var _fork_previewed := false
+## The player just walked a trail to this room: its fight starts without the enemy stepping in.
+var _arrived_on_trail := false
+var _crossroads_fork := false
+signal _arrival_done
+var _arrival_token := 0
+## Offer shown by the view right now; the pick handler applies it once.
+var _pending_offer: RewardOffer
+## Relic modifiers currently on the player (swapped for fresh ones at every fight start).
+var _relic_mods: Array[Modifier] = []
+## Realm whose road the persistent view shows, -1 = none yet.
+var _road_realm := -1
 var _paused := false
 ## Depth whose crossroads the player already answered with "go deeper".
 var _crossroads_depth := -1
 var _duel: Duel
 var _wave_index := 0
+var _queued_item: StringName = &""
+var _queued_item_left := 0.0
 var _view: BattleView
 var _scheme: InputScheme
 var _screen: Control
+## Run page (altar, place, crossroads) shown above the persistent view in its own layer.
+var _overlay_layer: CanvasLayer
 var _gameplay_active := false
 var _reviving := false
 var _embers_banked := false
@@ -43,6 +73,7 @@ func _ready() -> void:
 	_tuning = load(TUNING_PATH) as CombatTuning
 	_dev = DevShot.install(self) != null
 	_run_levels = StatLevels.new(GameSession.run_table())
+	_reward_ctx = RewardContext.new(_run_levels, _inventory)
 	if GameSession.launch == GameSession.Launch.CONTINUE_RUN and _load_saved_run():
 		pass
 	else:
@@ -59,6 +90,7 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if _duel != null and not _duel.finished and not _paused:
 		_duel.advance(minf(delta, MAX_FRAME))
+		_flush_queued_item(delta)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
@@ -69,13 +101,13 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_on_block_release()
 		return
 	if key.keycode == KEY_ESCAPE:
-		if _view != null:
+		if _view != null and _view.visible and _overlay_layer == null:
 			_view.toggle_pause()
 		else:
 			_to_menu()
-	elif _view != null and ATTACK_KEYS.has(key.keycode):
+	elif _view != null and _view.visible and ATTACK_KEYS.has(key.keycode):
 		_on_attack()
-	elif _view != null and BLOCK_KEYS.has(key.keycode):
+	elif _view != null and _view.visible and BLOCK_KEYS.has(key.keycode):
 		_on_block()
 
 # --- run setup and saves ---------------------------------------------------------------------------------------
@@ -99,6 +131,7 @@ func _load_saved_run() -> bool:
 	_run = run
 	_run_levels.from_dict(envelope.get("levels", {}))
 	_inventory.from_dict(envelope.get("inventory", {}))
+	_reward_ctx.from_dict(envelope.get("rewards", {}))
 	# Old saves carried a bool `revive_used`.
 	GameSession.revives_used = int(envelope.get("revives_used", 1 if bool(envelope.get("revive_used", false)) else 0))
 	return true
@@ -106,7 +139,7 @@ func _load_saved_run() -> bool:
 func _save_run() -> void:
 	if _dev or _run == null or _run.is_ended():
 		return
-	SaveStore.save_run({"run": _run.to_dict(), "levels": _run_levels.to_dict(), "inventory": _inventory.to_dict(), "revives_used": GameSession.revives_used})
+	SaveStore.save_run({"run": _run.to_dict(), "levels": _run_levels.to_dict(), "inventory": _inventory.to_dict(), "rewards": _reward_ctx.to_dict(), "revives_used": GameSession.revives_used})
 
 func _permanent() -> StatLevels:
 	return GameSession.profile().permanent(GameSession.permanent_table())
@@ -124,30 +157,154 @@ func _show_phase() -> void:
 			if _run.at_crossroads() and _crossroads_depth != _run.depth:
 				_show_crossroads()
 				return
-			# A single door is no choice: walk through it.
-			if _run.offer.doors.size() == 1:
-				_on_door_picked(0)
-				return
-			var doors := DoorsScreen.new().setup(_run)
-			doors.door_picked.connect(_on_door_picked)
-			_show(doors)
+			_travel()
 		Run.PHASE_ROOM:
 			_enter_room()
 		_:
 			_finish_run()
 
+## After a boss: a fork on the road. Left trail = HOME (bank the Souls), right = DEEPER (next realm).
 func _show_crossroads() -> void:
-	var screen := CrossroadsScreen.new().setup(_run)
-	screen.retire_requested.connect(func() -> void:
-		_run.retire()
-		_finish_run())
-	screen.deeper_requested.connect(func() -> void:
-		_crossroads_depth = _run.depth
-		_show_phase())
-	_show(screen)
+	_ensure_view()
+	var view := _view
+	view.preview_fork(crossroads_offer(_run.souls, _run.depth + 1))
+	view.walk_to_fork()
+	await view.fork_reached
+	if _view != view or not is_instance_valid(view) or _run.phase != Run.PHASE_DOORS:
+		return
+	view.update_fork(crossroads_offer(_run.souls, _run.depth + 1))
+	_crossroads_fork = true
+
+static func crossroads_offer(souls: int, next_depth: int) -> DoorOffer:
+	var offer := DoorOffer.new()
+	var home := Door.make(&"home")
+	home.index = 0
+	home.preview = {"hint": TranslationServer.translate("PORTAL_HOME_LINE") % souls}
+	var deeper := Door.make(&"deeper")
+	deeper.index = 1
+	deeper.preview = {"hint": TranslationServer.translate("PORTAL_DEEPER_LINE") % next_depth}
+	offer.doors.append(home)
+	offer.doors.append(deeper)
+	return offer
+
+func _on_crossroads_trail(index: int) -> void:
+	var view := _view
+	await view.trail_arrived
+	if _view != view or not is_instance_valid(view):
+		return
+	if index == 0:
+		_on_home_picked()
+		return
+	view.clear_road_fork()
+	_on_deeper_picked()
+
+func _on_home_picked() -> void:
+	_run.retire()
+	_finish_run()
+
+func _on_deeper_picked() -> void:
+	_crossroads_depth = _run.depth
+	var realm_slot := _run.depth % REALM_BACKGROUNDS
+	if _view == null or _road_realm == -1 or _road_realm == realm_slot:
+		_show_phase()
+		return
+	var view := _view
+	_road_realm = realm_slot
+	view.transition_road(realm_slot, _run.config.seed, REALM_WALK_SECONDS)
+	view.walk(REALM_WALK_SECONDS)
+	await view.walk_finished
+	if _view != view or not is_instance_valid(view):
+		return
+	_show_phase()
+
+## Doors are on offer: walk the road. One door is no choice (walk, enter); several end at the fork, which stands on the
+## road since the previous fight. The first room of a run (no view yet) has no walk: the enemy steps in.
+func _travel() -> void:
+	var first := _view == null
+	_ensure_view()
+	var view := _view
+	if _run.offer.doors.size() == 1:
+		if not first:
+			view.walk(WALK_SECONDS)
+			await view.walk_finished
+			if _view != view or not is_instance_valid(view) or _run.phase != Run.PHASE_DOORS:
+				return
+		_run.choose_door(0)
+		_show_phase()
+		return
+	if not _fork_previewed:
+		view.preview_fork(_run.offer)
+	_fork_previewed = false
+	view.walk_to_fork()
+	await view.fork_reached
+	if _view != view or not is_instance_valid(view) or _run.phase != Run.PHASE_DOORS:
+		return
+	view.update_fork(_run.offer)
+
+## The next step is a fork: it stands on the road ahead while this room is played.
+func _preview_next_fork() -> void:
+	var next_offer := _run.peek_next_offer()
+	_fork_previewed = next_offer != null
+	if _fork_previewed:
+		_view.preview_fork(next_offer)
+
+func _on_trail_picked(index: int) -> void:
+	if _crossroads_fork:
+		_crossroads_fork = false
+		_on_crossroads_trail(index)
+		return
+	if _run.phase != Run.PHASE_DOORS or _run.choose_door(index) == null:
+		return
+	var view := _view
+	_arrival_token += 1
+	var token := _arrival_token
+	var on_arrived := func(_i: int) -> void:
+		if token == _arrival_token:
+			_arrival_done.emit()
+	view.trail_arrived.connect(on_arrived, CONNECT_ONE_SHOT)
+	get_tree().create_timer(TRAIL_ARRIVE_TIMEOUT).timeout.connect(func() -> void:
+		if token == _arrival_token:
+			_arrival_done.emit())
+	await _arrival_done
+	_arrival_token += 1
+	if is_instance_valid(view) and view.trail_arrived.is_connected(on_arrived):
+		view.trail_arrived.disconnect(on_arrived)
+	_arrived_on_trail = true
+	if _view != view or not is_instance_valid(view):
+		return
+	_show_phase()
+
+## The persistent view exists, is visible and shows the road of the current realm.
+func _ensure_view() -> void:
+	if _view == null:
+		_create_view()
+	_set_view_shown(true)
+	var realm_slot := _run.depth % REALM_BACKGROUNDS
+	if _road_realm != realm_slot:
+		_road_realm = realm_slot
+		_view.set_road(realm_slot, _run.config.seed)
+
+## Run page above the view: its backdrop is dimmed so the road shows through.
+func _show_overlay(screen: Control) -> void:
+	_clear_overlay()
+	if _view != null:
+		_view.set_input_enabled(false)
+	var back := screen.get_child(0) as CanvasItem
+	if back != null:
+		back.modulate.a = OVERLAY_DIM
+	_overlay_layer = CanvasLayer.new()
+	_overlay_layer.layer = OVERLAY_LAYER
+	_overlay_layer.add_child(screen)
+	add_child(_overlay_layer)
+	Audio.play_music(&"menu")
+
+func _clear_overlay() -> void:
+	if _overlay_layer != null:
+		_overlay_layer.queue_free()
+		_overlay_layer = null
 
 func _show(screen: Control) -> void:
-	_free_view()
+	_hide_view()
 	if _screen != null:
 		_screen.queue_free()
 	_screen = screen
@@ -158,16 +315,17 @@ func _on_omen_picked(index: int) -> void:
 	_run.choose_omen(index)
 	_show_phase()
 
-func _on_door_picked(index: int) -> void:
-	_run.choose_door(index)
-	_show_phase()
-
 func _enter_room() -> void:
 	_save_run()
 	var plan := _run.plan
 	if plan.is_combat:
 		_start_fight(plan)
 		return
+	_ensure_view()
+	if _arrived_on_trail:
+		_arrived_on_trail = false
+		_view.clear_road_fork()
+	_preview_next_fork()
 	# The bonfire has one sensible action: rest without asking.
 	if plan.kind_id == BonfireRoom.ID:
 		_on_place_finished(BonfireRoom.HEAL)
@@ -175,12 +333,12 @@ func _enter_room() -> void:
 	if plan.kind_id == AltarRoom.ID:
 		_show_altar()
 		return
-	var panel := PlacePanel.new().setup(_run, plan)
-	panel.finished.connect(_on_place_finished)
-	_show(panel)
+	# No other place kind has a page: pass through it.
+	_on_place_finished(&"")
 
 ## Altar: stat levels and run buffs for Souls; rebuilt after every purchase so prices and Souls stay current.
 func _show_altar() -> void:
+	_ensure_view()
 	var levels: Array[Dictionary] = []
 	for stat in _run_levels.table.stat_ids():
 		var cost := _run_levels.cost_of(stat)
@@ -205,7 +363,7 @@ func _show_altar() -> void:
 		await _on_buy_item_requested(item_id)
 		_show_altar())
 	altar.leave_requested.connect(_on_place_finished.bind(&""))
-	_show(altar)
+	_show_overlay(altar)
 
 func _on_place_finished(choice: StringName) -> void:
 	var result := RoomResult.victory()
@@ -215,9 +373,11 @@ func _on_place_finished(choice: StringName) -> void:
 ## Reports the room to the run and moves on to the next screen (or the summary).
 func _complete(result: RoomResult) -> void:
 	_run.complete_room(result)
+	_clear_overlay()
 	if _run.is_ended():
 		_finish_run()
 	else:
+		_end_fight_state()
 		_show_phase()
 
 func _stat_value(stat: StringName) -> float:
@@ -247,7 +407,7 @@ func _shop_items() -> Array[Dictionary]:
 		if not def.is_consumable():
 			continue
 		var price := _inventory.price_of(def)
-		rows.append({"id": def.id, "name": tr(def.name_key), "icon_path": "", "price": price, "info": tr(def.desc_key),
+		rows.append({"id": def.id, "name": tr(def.name_key), "icon_path": def.icon_path, "price": price, "info": tr(def.desc_key),
 			"affordable": _inventory.can_buy(def, _run.souls), "ad": _item_ad_offer(def), "count": _inventory.charges(def.id),
 			"usable": def.is_consumable()})
 	return rows
@@ -270,10 +430,9 @@ func _on_buy_item_requested(item_id: StringName) -> void:
 		_inventory.buy(def, _inventory.price_of(def))
 	else:
 		return
-	# A healing flask is drunk at once when HP is not full; the rest stays stored.
-	if _duel != null and def is ConsumableItem and (def as ConsumableItem).heal_share > 0.0 \
-			and _duel.player.hp < _duel.player.max_hp:
-		_duel.use_item(item_id)
+	# Battle slot: a consumable bought by a tap is used in the same tap (stays stored if it cannot be used now).
+	if _duel != null and def.is_consumable():
+		_use_item_now_or_soon(item_id)
 	_sync_view_shop()
 	_save_run()
 
@@ -290,8 +449,32 @@ func _watch_ads(count: int) -> bool:
 	return granted
 
 func _on_use_item_requested(item_id: StringName) -> void:
-	if _duel != null and _duel.use_item(item_id):
-		_sync_view_shop()
+	_use_item_now_or_soon(item_id)
+
+## Drinking is only allowed while idle or guarding. A tap during a swing or a stagger would be rejected and
+## the item would look dead, so it is remembered for a moment and used the instant the player is free.
+func _use_item_now_or_soon(item_id: StringName) -> void:
+	if _duel == null:
+		return
+	if _duel.player.state is IdleState or _duel.player.state is BlockingState:
+		_queued_item = &""
+		if _duel.use_item(item_id):
+			_sync_view_shop()
+		return
+	_queued_item = item_id
+	_queued_item_left = ITEM_QUEUE_SECONDS
+
+func _flush_queued_item(delta: float) -> void:
+	if _queued_item == &"":
+		return
+	_queued_item_left -= delta
+	if _queued_item_left <= 0.0:
+		_queued_item = &""
+	elif _duel.player.state is IdleState or _duel.player.state is BlockingState:
+		var item_id := _queued_item
+		_queued_item = &""
+		if _duel.use_item(item_id):
+			_sync_view_shop()
 
 func _on_souls_earned(amount: int, _source: StringName) -> void:
 	_run.add_souls(amount)
@@ -345,24 +528,50 @@ func _buy_run_level(stat: StringName, free := false) -> bool:
 	if not free:
 		_run.add_souls(-cost)
 	_run_levels.level_up(stat)
+	_refresh_max_hp()
+	return true
+
+## A max hp level raises the run's hp cap and heals the gain.
+func _refresh_max_hp() -> void:
 	var new_max := PlayerBuilder.build(_tuning, _permanent(), _run_levels).max_hp
 	var gain := new_max - _run.config.max_hp
 	_run.config.max_hp = new_max
 	if gain > 0:
 		_run.heal(gain)
-	return true
 
 # --- fights ----------------------------------------------------------------------------------------------------
 
 func _start_fight(plan: RoomPlan) -> void:
-	_free_view()
+	var step_in := not _arrived_on_trail
+	_arrived_on_trail = false
 	if _screen != null:
 		_screen.queue_free()
 		_screen = null
+	_clear_overlay()
+	_ensure_view()
+	_preview_next_fork()
+	var realm_slot := _run.depth % REALM_BACKGROUNDS
+	var player := PlayerBuilder.build(_tuning, _permanent(), _run_levels)
+	player.hp = clampi(plan.player_hp, 1, player.max_hp)
+	_wave_index = 0
+	_paused = false
+	GameSession.begin_fight()
+	_duel = _make_duel(plan, 0, player)
+	_apply_relics(_duel)
+	_inventory.begin_fight(_duel)
+	_wire(_duel)
+	_mount_scheme()
+	_view.begin(_view_definition(plan, 0), _duel.enemy, _duel.player, step_in)
+	_sync_view_shop()
+	_set_gameplay(true)
+	Audio.play_music(StringName("battle_%d" % (realm_slot + 1)))
+	Audio.set_key_shift(REALM_KEY_SHIFTS[realm_slot])
+
+## One view for the whole run: signals are wired once here.
+func _create_view() -> void:
+	_road_realm = -1
 	_view = BattleView.new()
-	_view.background_id = _realm_background(plan)
 	add_child(_view)
-	_view.continue_pressed.connect(_on_victory_continue)
 	_view.revive_pressed.connect(_on_revive)
 	_view.menu_pressed.connect(_on_give_up)
 	_view.buy_level_requested.connect(_on_buy_level_requested)
@@ -372,31 +581,24 @@ func _start_fight(plan: RoomPlan) -> void:
 	_view.resume_requested.connect(_on_resume_requested)
 	_view.abandon_requested.connect(_on_abandon_requested)
 	_view.menu_requested.connect(_on_menu_requested)
-	var player := PlayerBuilder.build(_tuning, _permanent(), _run_levels)
-	player.hp = clampi(plan.player_hp, 1, player.max_hp)
-	_wave_index = 0
-	GameSession.begin_fight()
-	_duel = _make_duel(plan, 0, player)
-	_inventory.begin_fight(_duel)
-	_wire(_duel)
-	_mount_scheme()
-	_view.begin(_view_definition(plan, 0), _duel.enemy, _duel.player)
-	_sync_view_shop()
-	_set_gameplay(true)
-	var realm_slot := _run.depth % REALM_BACKGROUNDS
-	Audio.play_music(StringName("battle_%d" % (realm_slot + 1)))
-	Audio.set_key_shift(REALM_KEY_SHIFTS[realm_slot])
+	_view.reward_picked.connect(_on_reward_picked)
+	_view.trail_picked.connect(_on_trail_picked)
+	_view.home_picked.connect(_on_home_picked)
+	_view.deeper_picked.connect(_on_deeper_picked)
+
+## Owned relics become fresh modifiers on the player (the previous copies, if any, leave first).
+func _apply_relics(duel: Duel) -> void:
+	for mod in _relic_mods:
+		duel.player.mods.remove(mod)
+	_relic_mods = _reward_ctx.relic_modifiers()
+	for mod in _relic_mods:
+		duel.player.mods.add(mod)
 
 ## Duel against the wave's enemy `index`, fought by `player` (the same Fighter all wave long).
 func _make_duel(plan: RoomPlan, index: int, player: Fighter) -> Duel:
 	var duel := Duel.new(_tuning, plan.enemy_at(index), plan.combat_seed + index, plan.combat_level, player)
 	_apply_room_scaling(duel.enemy, plan, index)
 	return duel
-
-## Realm backgrounds cycle with depth (realm_1..realm_4); boss rooms use the realm's boss set.
-func _realm_background(plan: RoomPlan) -> StringName:
-	var realm_number := _run.depth % REALM_BACKGROUNDS + 1
-	return StringName("realm_%d%s" % [realm_number, "_boss" if plan.kind_id == BossRoom.ID else ""])
 
 func _apply_room_scaling(enemy: Fighter, plan: RoomPlan, index := 0) -> void:
 	for affix_id in plan.affixes_at(index):
@@ -450,6 +652,9 @@ func _wire(duel: Duel) -> void:
 	duel.combo_changed.connect(_view.on_combo_changed)
 	duel.player_hit.connect(_view.on_player_hit)
 	duel.souls_earned.connect(_on_souls_earned)
+	duel.player_hp_changed.connect(_view.on_player_hp_changed)
+	duel.enemy_hp_changed.connect(_view.on_enemy_hp_changed)
+	duel.item_used.connect(_view.on_item_used)
 
 func _on_attack() -> void:
 	if _duel != null:
@@ -475,7 +680,7 @@ func _on_duel_finished(winner_side: StringName) -> void:
 		if _wave_index + 1 < _run.plan.wave_size():
 			_next_wave_enemy()
 		else:
-			_view.show_victory(_run.plan.souls_reward)
+			_on_room_won()
 		return
 	_view.show_death(GameSession.can_revive() and Platform.is_rewarded_available())
 
@@ -492,6 +697,7 @@ func _next_wave_enemy() -> void:
 	_wave_index += 1
 	_duel = _make_duel(plan, _wave_index, player)
 	_duel.combo = previous.combo
+	_apply_relics(_duel)
 	_inventory.begin_fight(_duel)
 	_wire(_duel)
 	_view.begin(_view_definition(plan, _wave_index), _duel.enemy, _duel.player)
@@ -500,9 +706,30 @@ func _next_wave_enemy() -> void:
 	_sync_view_shop()
 	_set_gameplay(true)
 
-func _on_victory_continue() -> void:
-	var hp_after := _duel.player.hp
-	_free_view()
+## Last wave down: banner, then the reward cards (or straight on when there is nothing to pick).
+func _on_room_won() -> void:
+	var duel := _duel
+	_view.show_victory(_run.plan.souls_reward)
+	var offer := RewardGenerator.generate(_run, _run.plan, _reward_ctx)
+	await get_tree().create_timer(VICTORY_BANNER).timeout
+	if _duel != duel or _view == null or _view.is_queued_for_deletion():
+		return
+	if offer.is_open():
+		_pending_offer = offer
+		_view.show_rewards(offer)
+	else:
+		_complete(RoomResult.victory(duel.player.hp))
+
+func _on_reward_picked(index: int) -> void:
+	var offer := _pending_offer
+	if offer == null or _duel == null:
+		return
+	_pending_offer = null
+	var hp_before := _run.hp
+	offer.apply(index, _run, _reward_ctx)
+	_refresh_max_hp()
+	# Heals went to the run's hp; the duel's hp is the truth now, so carry the gain over.
+	var hp_after := clampi(_duel.player.hp + _run.hp - hp_before, 1, _run.config.max_hp)
 	_complete(RoomResult.victory(hp_after))
 
 ## Rewarded revive: the same duel continues, the view restarts on its numbers.
@@ -524,18 +751,41 @@ func _on_give_up() -> void:
 	_free_view()
 	_complete(RoomResult.defeat())
 
+## Fight state off and the persistent view out of sight (a run screen takes over).
+func _hide_view() -> void:
+	_end_fight_state()
+	if _view != null:
+		_view.set_input_enabled(false)
+		_set_view_shown(false)
+
+## Run end / menu / give up: the view goes away for good.
 func _free_view() -> void:
-	_set_gameplay(false)
-	_inventory.end_fight()
-	_duel = null
-	_scheme = null
+	_fork_previewed = false
+	_end_fight_state()
 	if _view != null:
 		_view.queue_free()
 		_view = null
 
+func _end_fight_state() -> void:
+	_set_gameplay(false)
+	_inventory.end_fight()
+	_duel = null
+	_scheme = null
+	_pending_offer = null
+	_paused = false
+
+## CanvasLayers ignore a hidden parent, so they are toggled with the view.
+func _set_view_shown(shown: bool) -> void:
+	_view.visible = shown
+	for child in _view.get_children():
+		if child is CanvasLayer:
+			(child as CanvasLayer).visible = shown
+
 # --- end of run ------------------------------------------------------------------------------------------------
 
 func _finish_run() -> void:
+	_clear_overlay()
+	_free_view()
 	var summary := _run.summary
 	if not _embers_banked:
 		_embers_banked = true

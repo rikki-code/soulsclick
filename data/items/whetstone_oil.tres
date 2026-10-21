@@ -15,5 +15,6 @@ id = &"whetstone_oil"
 name_key = "ITEM_WHETSTONE_OIL"
 desc_key = "ITEM_WHETSTONE_OIL_DESC"
 icon = &"whetstone_oil"
+icon_path = "res://view/packs/icon_pack/silhouette_pack/items/whetstone_oil.svg"
 price_souls = 60
 stats = Array[ExtResource("2")]([SubResource("s0")])

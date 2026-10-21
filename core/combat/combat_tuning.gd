@@ -38,6 +38,8 @@ extends Resource
 @export var chip_damage_share := 0.05
 ## Share of heavy strike damage taken when a plain block fails to hold.
 @export var guard_break_damage_share := 0.6
+## One enemy hit takes at most this share of the player's max hp (stat `max_hit_share`; >= 1 disables).
+@export var max_hit_share := 0.35
 
 @export_group("Level scaling")
 @export var enemy_hp_growth := 0.25

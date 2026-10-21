@@ -143,7 +143,7 @@ func _fill_wave(run: Run, plan: RoomPlan, first: EnemyDefinition) -> void:
 	var node := plan.node
 	var rng := RandomNumberGenerator.new()
 	rng.seed = plan.combat_seed + WAVE_SEED_OFFSET
-	var extra := wave_extra_count(curve, run.depth, node, rng)
+	var extra := wave_extra_count(curve, run.depth, node, rng) + run.realm().rule_at(run.step_index).wave_bonus
 	var pool: Array[RealmEnemyEntry] = []
 	for entry in extra_entries(run.realm()):
 		if entry.enemy != null:

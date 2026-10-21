@@ -19,6 +19,8 @@ const KIND_COLORS := {
 	&"bonfire": Color(0.95, 0.5, 0.15),
 	&"boss": Color(0.7, 0.07, 0.2),
 	&"shop": Color(0.3, 0.7, 0.65),
+	&"home": Color(0.74, 0.86, 1.0),
+	&"deeper": Color(0.62, 0.4, 0.9),
 }
 
 var _step_count := 0

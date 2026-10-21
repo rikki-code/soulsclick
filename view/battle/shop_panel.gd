@@ -1,5 +1,5 @@
-## In-battle shop: an always-visible column of big round buttons on the right edge, one tap = one action
-## (level: buy; consumable: use if owned else buy; run buff: buy). Long-press shows name + info.
+## In-battle consumable slots: an always-visible column of big round slots on the right edge, one tap = one action
+## (owned: use; count 0 and affordable or ad: buy, the game layer uses it at once). Long-press shows name + info.
 ## Pure view: the game layer owns prices and logic and answers with set_shop / set_souls.
 class_name ShopPanel
 extends Control
@@ -10,14 +10,15 @@ signal use_item_requested(item_id: StringName)
 ## The button column moved; BattleView refreshes the input exclusion rects.
 signal rects_changed
 
-const BUTTON_SIZE := 96.0
-const MIN_BUTTON_SIZE := 64.0
+const BUTTON_SIZE := 160.0
+const MIN_BUTTON_SIZE := 150.0
+const COOLDOWN_SECONDS := 0.7
 const BUTTON_GAP := 12.0
 const EDGE_GAP := 10.0
 const LONG_PRESS_SECONDS := 0.4
-const GLYPH_FONT := 30
-const PRICE_FONT := 22
-const BADGE_FONT := 22
+const GLYPH_FONT := 44
+const PRICE_FONT := 32
+const BADGE_FONT := 28
 const TIP_FONT := 24
 const TIP_WIDTH := 380.0
 const FILL_COLOR := Color(0.06, 0.05, 0.07, 0.88)
@@ -38,6 +39,8 @@ class ShopButton extends Button:
 	var ad := false
 	var icon_tex: Texture2D
 	var pulse := 0.0
+	## 1 -> 0 after a tap: radial wipe.
+	var cooldown := 0.0
 
 	func _init() -> void:
 		flat = true
@@ -71,10 +74,16 @@ class ShopButton extends Button:
 				draw_string(font, Vector2(0.0, c.y + r * 0.62), BattleText.text("AD_BADGE", "AD"), HORIZONTAL_ALIGNMENT_CENTER, size.x, PRICE_FONT, GREEN)
 			else:
 				draw_string(font, Vector2(0.0, c.y + r * 0.62), price_text, HORIZONTAL_ALIGNMENT_CENTER, size.x, PRICE_FONT, GOLD if can_act else GREY)
+		if cooldown > 0.0:
+			var pts := PackedVector2Array([c])
+			var steps := 32
+			for i in steps + 1:
+				pts.append(c + Vector2.from_angle(-PI * 0.5 + TAU * cooldown * i / steps) * (r - 2.0))
+			draw_colored_polygon(pts, Color(1, 1, 1, 0.3))
 		if is_item and count > 0:
-			var b := Vector2(size.x - 18.0, 18.0)
-			draw_circle(b, 17.0, GREEN)
-			draw_string(font, Vector2(b.x - 20.0, b.y + 8.0), str(count), HORIZONTAL_ALIGNMENT_CENTER, 40.0, BADGE_FONT, Color.BLACK)
+			var b := Vector2(size.x - 30.0, 30.0)
+			draw_circle(b, 30.0, GREEN)
+			draw_string(font, Vector2(b.x - 30.0, b.y + 10.0), "x%d" % count, HORIZONTAL_ALIGNMENT_CENTER, 60.0, BADGE_FONT, Color.BLACK)
 
 var _souls := 0
 var _buttons: Array[ShopButton] = []
@@ -111,6 +120,9 @@ func _process(delta: float) -> void:
 	_time += delta
 	var pulse := 0.5 + 0.5 * sin(_time * PULSE_SPEED)
 	for btn in _buttons:
+		if btn.cooldown > 0.0:
+			btn.cooldown = maxf(btn.cooldown - delta / COOLDOWN_SECONDS, 0.0)
+			btn.queue_redraw()
 		if btn.can_act:
 			btn.pulse = pulse
 			btn.queue_redraw()
@@ -249,6 +261,8 @@ func _on_pressed(index: int) -> void:
 		return
 	var entry := _entries[index]
 	var id := StringName(str(entry.get("id", "")))
+	if index < _buttons.size() and _buttons[index].can_act:
+		_buttons[index].cooldown = 1.0
 	match StringName(entry["kind"]):
 		&"level":
 			buy_level_requested.emit(id)

@@ -52,6 +52,19 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
 - [ ] R3 Run rewards after elites/bosses (+flask, +max HP...).
 - [ ] W2 Two enemies at once for deep realms (later).
 
+## Phase 1.5: playtest feedback 2026-10-21 (decisions by user)
+
+- [x] B1 Balance: hit damage cap as % of max HP (no one-shots), bot sim over depth, tune DepthCurve and meta
+      ceiling (`core/combat`, `data/`, `tools/`). Files: no UI.
+- [x] RW1 Reward choice after a fight: 3 cards relic / stat level / consumable (elite+boss), 1 of 2 small
+      (souls, charge) after normal fights. Core: `core/run/rewards/`, catalog, seeded. UI later (overlay on road).
+- [x] CS1 Consumables: tap-to-use slots with charges (flask, bomb, oil, ash), refill at bonfire / after boss,
+      loot from rewards, buyable any time (shop on a fork or in battle column). No buy-in-battle clutter.
+- [x] RD1 Seamless road: one scene per run, enemies walk toward camera along a procedural road, kill = advance,
+      forks split the road into 2-3 labeled paths (icon + name), per-realm procedural scenery (trees, buildings,
+      mountains), no separate door/altar/bonfire screens (overlays on the road). Replaces PathView + doors screen.
+- [ ] WEB1 Deployed Pages build is stale (lambda catalog fix not yet pushed): menu_root compile errors.
+
 ## Phase 2: release slice
 
 - [ ] Weapons with affixes, spells, prestige cycle.
@@ -95,3 +108,5 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
   button in pause does nothing yet), side shop (items + run levels, souls income per hit/parry), branding
   (icon, logos, store covers). Not played through by hand yet. Next: playtest + balance (numbers ×10 idea),
   pause → settings, D1 data for hound/dancer/bulwark.
+
+- 2026-10-21: B1 (cap 0.35 + balance_sim), RW1+RW2 (rewards core + overlay), CS1 (tap slots), RD1/G1/G2 (road, fork signs, walk, persistent BattleView) done; contract `design/road_contract.md`. Not played by hand. Next: playtest road, bonfire path untested, no shop room kind, enemies_v2 (4 data-only + 9 needs-core), run_test/battle_test stale (7+2 fails).

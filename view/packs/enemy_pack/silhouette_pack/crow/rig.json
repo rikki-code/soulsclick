@@ -1,0 +1,626 @@
+{
+ "accent": "#f2e46a",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "parts": [
+  {
+   "id": "legs",
+   "file": "legs.svg",
+   "parent": "",
+   "pivot": [
+    134,
+    12
+   ],
+   "at": [
+    512,
+    790
+   ],
+   "z": 0
+  },
+  {
+   "id": "body",
+   "file": "body.svg",
+   "parent": "",
+   "pivot": [
+    104,
+    346
+   ],
+   "at": [
+    512,
+    790
+   ],
+   "z": 3
+  },
+  {
+   "id": "head",
+   "file": "head.svg",
+   "parent": "body",
+   "pivot": [
+    172,
+    106
+   ],
+   "at": [
+    24,
+    11
+   ],
+   "z": 4
+  },
+  {
+   "id": "eyes",
+   "file": "eyes.svg",
+   "parent": "head",
+   "pivot": [
+    34,
+    60
+   ],
+   "at": [
+    172,
+    106
+   ],
+   "z": 5
+  },
+  {
+   "id": "wing_l",
+   "file": "wing_l.svg",
+   "parent": "body",
+   "pivot": [
+    380,
+    209
+   ],
+   "at": [
+    72,
+    101
+   ],
+   "z": 2
+  },
+  {
+   "id": "wing_r",
+   "file": "wing_r.svg",
+   "parent": "body",
+   "pivot": [
+    15,
+    209
+   ],
+   "at": [
+    152,
+    101
+   ],
+   "z": 6
+  }
+ ],
+ "poses": {
+  "idle": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "head": {
+    "rot": 2,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": -38,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": 38,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_quick": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 6,
+    "move": [
+     6,
+     20
+    ]
+   },
+   "head": {
+    "rot": 22,
+    "move": [
+     18,
+     14
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 25,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -25,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_quick": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -16,
+    "move": [
+     -40,
+     24
+    ]
+   },
+   "head": {
+    "rot": -28,
+    "move": [
+     -30,
+     20
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": -40,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": 40,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_heavy": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 8,
+    "move": [
+     10,
+     40
+    ]
+   },
+   "head": {
+    "rot": 30,
+    "move": [
+     24,
+     16
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 62,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -62,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_heavy": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -24,
+    "move": [
+     -50,
+     26
+    ]
+   },
+   "head": {
+    "rot": -45,
+    "move": [
+     -40,
+     30
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": -55,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": 55,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_feint": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 8,
+    "move": [
+     6,
+     24
+    ]
+   },
+   "head": {
+    "rot": 24,
+    "move": [
+     14,
+     10
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": -10,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -70,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "windup_combo": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 12,
+    "move": [
+     30,
+     14
+    ]
+   },
+   "head": {
+    "rot": 10,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 6,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -150,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "strike_combo": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": -12,
+    "move": [
+     -30,
+     18
+    ]
+   },
+   "head": {
+    "rot": -14,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 150,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -6,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "recover": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 10,
+    "move": [
+     8,
+     36
+    ]
+   },
+   "head": {
+    "rot": 18,
+    "move": [
+     10,
+     10
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": -60,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": 60,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "staggered": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 24,
+    "move": [
+     4,
+     28
+    ]
+   },
+   "head": {
+    "rot": 30,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 34,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -50,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "hurt": {
+   "legs": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "body": {
+    "rot": 10,
+    "move": [
+     8,
+     12
+    ]
+   },
+   "head": {
+    "rot": 14,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 24,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": -24,
+    "move": [
+     0,
+     0
+    ]
+   }
+  },
+  "death": {
+   "legs": {
+    "rot": -86,
+    "move": [
+     40,
+     22
+    ]
+   },
+   "body": {
+    "rot": -84,
+    "move": [
+     40,
+     22
+    ]
+   },
+   "head": {
+    "rot": 62,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "eyes": {
+    "rot": 0,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_l": {
+    "rot": 147,
+    "move": [
+     0,
+     0
+    ]
+   },
+   "wing_r": {
+    "rot": 60,
+    "move": [
+     0,
+     0
+    ]
+   }
+  }
+ },
+ "glow_parts": [
+  "eyes"
+ ]
+}

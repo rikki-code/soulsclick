@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RewardTuning" format=3]
+
+[ext_resource type="Script" path="res://core/run/rewards/reward_tuning.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+big_room_ids = Array[StringName]([&"elite", &"boss"])
+big_kinds = Array[StringName]([&"relic", &"stat_level", &"consumable"])
+big_count = 3
+small_kinds = Array[StringName]([&"souls", &"consumable", &"heal"])
+small_count = 2
+souls_base = 25
+heal_share = 0.25
+consumable_charges = 1

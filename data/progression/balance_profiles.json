@@ -1,0 +1,5 @@
+{
+	"none": {"perm": 0, "run": 0, "flasks": 2},
+	"mid": {"perm": 5, "run": 5, "flasks": 4},
+	"max": {"perm": 15, "run": 15, "flasks": 6}
+}

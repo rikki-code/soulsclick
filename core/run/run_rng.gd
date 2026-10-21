@@ -7,6 +7,8 @@ const MAP := &"map"
 const OMEN := &"omen"
 const REWARD := &"reward"
 const COMBAT := &"combat"
+## Post-room reward cards: depth + step only, never earlier choices.
+const REWARD_CHOICE := &"reward_choice"
 
 const _MIX_A := 0x2545F4914F6CDD1D
 const _MIX_B := 0x1CE4E5B9BF58476D

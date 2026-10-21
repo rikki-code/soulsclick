@@ -44,7 +44,7 @@ After `from_dict` connect signals and call `resume()`. `SaveStore` wiring is the
 ## Data
 
 - `data/realms/realm_N.tres` (`RealmDefinition`): `step_rules: Array[StepRule]` (per step `kind_weights`, `required_kinds`,
-  `door_count_weights`), `fight_pool` / `elite_pool: Array[RealmEnemyEntry]` (enemy, weight, elite `affixes` ids), `boss`,
+  `door_count_weights`, `wave_bonus` = extra wave enemies on road steps), `fight_pool` / `elite_pool: Array[RealmEnemyEntry]` (enemy, weight, elite `affixes` ids), `boss`,
   tuning (`elite_hp_multiplier`, `elite_souls_multiplier`, `bonfire_heal_share`, `boss_heal_share`, offer sizes, shop prices,
   `fight_pick_chance`). `validate()` returns problems (needs elite, bonfire, altar required somewhere; last step boss only).
 - `DoorGenerator.generate(run)`: required kinds first, then weighted fill, no duplicate `Door.signature()`
@@ -97,3 +97,7 @@ Rebuild the class cache after adding a `class_name` file: `--headless --path . -
 ## Game layer wiring (G1)
 
 `GameRoot` owns the `Run` and drives screens from `run.phase` (`view/run/`: `OmenScreen`, `DoorsScreen`, `PlacePanel` for bonfire/shop/altar placeholders, `SummaryScreen`). Fight rooms build the player with `PlayerBuilder` (kite_shield + sword, permanent levels, run levels), `Duel(tuning, plan.enemy, plan.combat_seed, plan.combat_level, player)`, affix modifier and `hp_multiplier` on the enemy; death -> rewarded `Duel.revive_player` once per run, else `RoomResult.defeat()`. Save envelope `user://run.json` = `{run, levels (run StatLevels), revive_used}` via `SaveStore.save_run/load_run/delete_run` at every doors/room boundary; deleted when the run ends. Death banks 0% (`RunConfig.death_bank_rate`); the summary's rewarded "save half" adds 50%. Run levels are bought in battle: `GameRoot._on_buy_level_requested` (hook for `BattleView.buy_level_requested`; items/shop wiring is a TODO in `_sync_view_shop`). Dev: `-- --screen=<doors|fight>`.
+
+## Rewards (core/run/rewards, data/rewards/reward_tuning.tres)
+
+After a won combat room the game layer calls `RewardGenerator.generate(run, plan, ctx) -> RewardOffer` (seeded by `RunRng.REWARD_CHOICE` from seed + depth + step; `ctx` only filters owned relics / full stacks). Elite/boss: 3 cards of different kinds (relic / stat_level / consumable); other fights: 2 of souls / consumable / heal; layout is `RewardTuning`. Show `offer.cards` (`title()`, `info()`, `tag_key`, `icon_path`, `payload`), then `offer.apply(index, run, ctx)` once; `RewardContext(run_levels, inventory)` holds the owned `relics` ids (`relic_modifiers()` at fight start, `to_dict/from_dict` to save). New kind = one `RewardKind` file + one line in `RewardKindCatalog` + a kind id in the tuning lists.

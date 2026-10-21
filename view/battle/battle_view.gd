@@ -3,7 +3,13 @@
 class_name BattleView
 extends Control
 
-signal continue_pressed
+signal walk_finished
+signal reward_picked(index: int)
+signal trail_picked(index: int)
+signal fork_reached
+signal trail_arrived(index: int)
+signal home_picked
+signal deeper_picked
 signal revive_pressed
 signal menu_pressed
 signal pause_requested
@@ -23,6 +29,13 @@ const RIG_INK_HEIGHT := 915.0
 const LANDSCAPE_INK_SHARE := 0.76
 const PORTRAIT_MAX_RIG_SCALE := 1.3
 const BG_BELOW_GROUND := 420.0
+## On the road the enemy stands far ahead: smaller, feet on the road centre line.
+const ROAD_RIG_SHARE := 0.8
+const ROAD_FEET_Y_SHARE := 0.72
+const SHADOW_HALF_WIDTH := 300.0
+const SHADOW_HALF_HEIGHT := 46.0
+const SHADOW_ALPHA := 0.6
+const SHADOW_STEPS := 24
 const MARGIN_SHARE := 0.04
 const TOP_HUD_SHARE := 0.02
 const TOP_HUD_HEIGHT := 130.0
@@ -68,7 +81,7 @@ const SOULS_ROLL_SECONDS := 0.5
 const SOULS_FLY_SECONDS := 0.7
 const SHOP_TOP_GAP := 20.0
 ## Portrait: the combo readout shifts left of the shop button column.
-const SHOP_COLUMN_CLEARANCE := 110.0
+const SHOP_COLUMN_CLEARANCE := 200.0
 const COMBO_MIN_SHOWN := 2
 const COMBO_BOX := Vector2(300, 150)
 const COMBO_COUNT_FONT := 84
@@ -84,6 +97,12 @@ const HITSTOP_SCALE := 0.05
 const CRIT_SPARK_COLOR := Color(1.0, 0.85, 0.2)
 const BACK_GRADIENT_TOP := Color(0.1, 0.08, 0.12)
 const BACK_GRADIENT_BOTTOM := Color(0.03, 0.03, 0.04)
+const WALK_SPEED := 0.3
+const STEP_IN_SECONDS := 0.5
+const STEP_FAR_SCALE := 0.35
+const BANNER_SECONDS := 1.0
+const BANNER_FONT := 72
+const OVERLAY_LAYER := 4
 const LOCK_COLORS := {&"attacking": Color(0.95, 0.6, 0.2), &"blocking": Color(0.4, 0.7, 1.0), &"staggered": Color(0.9, 0.2, 0.2)}
 
 var _definition: EnemyDefinition
@@ -132,11 +151,21 @@ var _souls_shown := 0
 var _souls_tween: Tween
 var _paused := false
 var _finished := false
+var _road: RoadScene
+const APPEAR_SECONDS := 0.25
+const FORK_FADE_SECONDS := 0.4
+var _walk_tween: Tween
+var _step_tween: Tween
+var _step := 1.0
+var _shadow: Polygon2D
+var _banner := Label.new()
+var _banner_tween: Tween
+var _overlay_layer := CanvasLayer.new()
 ## Parry window length (s) used when the duel gives no strike_timing; set from the tuning by the composition root.
 var parry_window := DEFAULT_PARRY_WINDOW
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_background.stretch_mode = TextureRect.STRETCH_SCALE
@@ -169,23 +198,37 @@ func _ready() -> void:
 	_pause_menu.settings_requested.connect(settings_requested.emit)
 	_pause_menu.abandon_requested.connect(abandon_requested.emit)
 	_pause_menu.menu_requested.connect(menu_requested.emit)
-	var overlay_layer := CanvasLayer.new()
-	overlay_layer.layer = 4
-	add_child(overlay_layer)
-	overlay_layer.add_child(_overlay)
-	_overlay.continue_pressed.connect(continue_pressed.emit)
+	_overlay_layer.layer = OVERLAY_LAYER
+	add_child(_overlay_layer)
+	_overlay_layer.add_child(_overlay)
+	_banner.visible = false
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_banner.add_theme_font_size_override("font_size", BANNER_FONT)
+	_banner.add_theme_color_override("font_color", SOULS_COLOR)
+	_banner.add_theme_color_override("font_outline_color", Color.BLACK)
+	_banner.add_theme_constant_override("outline_size", 12)
+	_overlay_layer.add_child(_banner)
 	_overlay.revive_pressed.connect(revive_pressed.emit)
 	_overlay.menu_pressed.connect(menu_pressed.emit)
 	get_viewport().size_changed.connect(_layout)
 
 ## Starts (or restarts after a revive) the view for a fresh duel; reads the initial numbers once.
-func begin(definition: EnemyDefinition, enemy: Fighter, player: Fighter) -> void:
+## step_in false: the player walked here (trail), so the enemy just fades in place while the fork fades out.
+func begin(definition: EnemyDefinition, enemy: Fighter, player: Fighter, step_in := true) -> void:
 	_definition = definition
 	_enemy_max = enemy.max_hp
 	_player_max = player.max_hp
 	_telegraphing = false
 	_enemy_staggered = false
 	_overlay.hide_overlay()
+	_kill(_walk_tween)
+	if _road != null:
+		_road.set_speed(0.0)
+	_enemy_name.visible = true
+	_enemy_bar.visible = true
 	_kill(_telegraph_tween)
 	_kill(_lock_tween)
 	_telegraph_bar.visible = false
@@ -202,11 +245,15 @@ func begin(definition: EnemyDefinition, enemy: Fighter, player: Fighter) -> void
 	if _rig != null:
 		_rig.queue_free()
 	_rig = EnemyRig.new()
+	_make_shadow()
 	_stage.add_child(_rig)
 	_rig.setup(RigSpec.load_for(definition.id, Color(0.9, 0.3, 0.2)))
 	_load_background(background_id if background_id != &"" else definition.id)
 	set_input_enabled(true)
-	_layout()
+	if step_in:
+		_step_in()
+	else:
+		_appear_in_place()
 
 ## Puts the active input scheme into the HUD (below the bars); call before begin().
 func mount_scheme(scheme: InputScheme) -> void:
@@ -236,8 +283,152 @@ func press_feedback(action_id: StringName) -> void:
 	if _scheme != null:
 		_scheme.on_action_accepted(action_id)
 
+## Flashes a "Victory +N souls" banner for about a second; no button.
 func show_victory(souls: int) -> void:
-	_overlay.show_victory(souls, END_DELAY)
+	_banner.text = "%s\n%s" % [tr("BATTLE_VICTORY"), tr("BATTLE_SOULS") % souls]
+	_banner.modulate.a = 1.0
+	_banner.visible = true
+	Audio.play(&"souls_gain")
+	_kill(_banner_tween)
+	_banner_tween = create_tween()
+	_banner_tween.tween_interval(BANNER_SECONDS * 0.7)
+	_banner_tween.tween_property(_banner, "modulate:a", 0.0, BANNER_SECONDS * 0.3)
+	_banner_tween.tween_callback(_banner.hide)
+
+## Replaces the background texture with a RoadScene of the realm; the road stands until walk().
+func set_road(realm_index: int, seed: int) -> void:
+	if _road == null:
+		_road = RoadScene.new()
+		_road.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(_road)
+		move_child(_road, 0)
+		_road.fork_reached.connect(fork_reached.emit)
+		_road.trail_picked.connect(trail_picked.emit)
+		_road.trail_arrived.connect(trail_arrived.emit)
+	_road.setup(realm_index, seed)
+	_road.set_speed(0.0)
+	_background.visible = false
+
+## Blends the road into another realm over `seconds` (keeps scrolling; pair with walk()).
+func transition_road(realm_index: int, seed: int, seconds: float) -> void:
+	if _road == null:
+		set_road(realm_index, seed)
+		return
+	_road.transition_to_realm(realm_index, seed, seconds)
+
+## Walks the road for `seconds` (enemy hidden, input off, speed eased in/out), then emits walk_finished.
+func walk(seconds: float) -> void:
+	clear_enemy()
+	set_input_enabled(false)
+	_kill(_walk_tween)
+	_walk_tween = create_tween()
+	_walk_tween.tween_method(_set_walk_progress.bind(seconds), 0.0, 1.0, maxf(seconds, 0.01))
+	_walk_tween.tween_callback(_end_walk)
+
+func _set_walk_progress(t: float, _seconds: float) -> void:
+	if _road != null:
+		_road.set_speed(WALK_SPEED * sin(PI * t))
+
+func _end_walk() -> void:
+	if _road != null:
+		_road.set_speed(0.0)
+	walk_finished.emit()
+
+## Hides the rig and the enemy bars between encounters; begin() shows them again.
+func clear_enemy() -> void:
+	_kill(_step_tween)
+	_kill(_telegraph_tween)
+	_ring.stop()
+	_telegraphing = false
+	_enemy_staggered = false
+	_telegraph_bar.visible = false
+	_enemy_bar.visible = false
+	_enemy_name.visible = false
+	if _rig != null:
+		_rig.stop_glow()
+		_rig.visible = false
+
+func show_rewards(offer: RewardOffer) -> void:
+	var overlay := RewardOverlay.new().setup(offer)
+	overlay.card_picked.connect(reward_picked.emit)
+	_overlay_layer.add_child(overlay)
+
+## The fork stands far ahead on the road while the room before it is fought.
+func preview_fork(offer: DoorOffer) -> void:
+	_road.show_fork(offer)
+
+## Walks up to the fork (enemy hidden, input off); emits fork_reached when the road stops.
+func walk_to_fork() -> void:
+	clear_enemy()
+	set_input_enabled(false)
+	_kill(_walk_tween)
+	_road.walk_to_fork()
+
+func update_fork(offer: DoorOffer) -> void:
+	_road.update_fork(offer)
+
+## Boss fallen: two portals on the road ahead (home banks the Souls, deeper risks them).
+func show_portals(souls: int, next_depth: int) -> void:
+	clear_enemy()
+	var portals := PortalView.new().setup(souls, next_depth)
+	portals.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	portals.home_picked.connect(func() -> void:
+		portals.queue_free()
+		home_picked.emit())
+	portals.deeper_picked.connect(func() -> void:
+		portals.queue_free()
+		deeper_picked.emit())
+	_overlay_layer.add_child(portals)
+	portals.reveal()
+
+## Rig appears where it stands: quick fade-in, no scale from far; the walked-to fork fades away.
+func _appear_in_place() -> void:
+	_kill(_step_tween)
+	_step = 1.0
+	_rig.modulate.a = 0.0
+	_layout()
+	_step_tween = create_tween()
+	_step_tween.tween_property(_rig, "modulate:a", 1.0, APPEAR_SECONDS)
+	clear_road_fork()
+
+## Fork landmark and remaining trail fade out (road removes the fork afterwards).
+func clear_road_fork() -> void:
+	if _road != null:
+		_road.fade_fork(FORK_FADE_SECONDS)
+
+## Enemy steps in: scales up from far over STEP_IN_SECONDS.
+func _step_in() -> void:
+	_kill(_step_tween)
+	_step = STEP_FAR_SCALE
+	_rig.modulate.a = 0.0
+	_layout()
+	_step_tween = create_tween().set_parallel()
+	_step_tween.tween_method(_set_step, STEP_FAR_SCALE, 1.0, STEP_IN_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_step_tween.tween_property(_rig, "modulate:a", 1.0, STEP_IN_SECONDS * 0.6)
+
+## Soft dark ellipse under the feet (sibling below the rig, placed by _layout, alpha follows the rig).
+func _make_shadow() -> void:
+	if _shadow != null:
+		_shadow.queue_free()
+	_shadow = Polygon2D.new()
+	var points := PackedVector2Array([Vector2.ZERO])
+	var colors := PackedColorArray([Color(0, 0, 0, SHADOW_ALPHA)])
+	for i in SHADOW_STEPS + 1:
+		var a := TAU * i / SHADOW_STEPS
+		points.append(Vector2(cos(a), sin(a)))
+		colors.append(Color(0, 0, 0, 0))
+	_shadow.polygon = points
+	_shadow.vertex_colors = colors
+	_stage.add_child(_shadow)
+
+func _process(_delta: float) -> void:
+	if _shadow != null and _rig != null and is_instance_valid(_rig):
+		_shadow.visible = _rig.visible and _road != null
+		_shadow.modulate.a = _rig.modulate.a
+
+func _set_step(k: float) -> void:
+	_step = k
+	_layout()
 
 func show_death(can_revive: bool) -> void:
 	_overlay.show_death(can_revive, END_DELAY)
@@ -281,6 +472,18 @@ func on_strike_resolved(result: StrikeResult) -> void:
 			Audio.play(&"feint")
 		_:
 			_show_hit(result)
+
+## Heals and item effects change hp outside a strike: keep the bars in sync at once.
+func on_player_hp_changed(hp: int, max_hp: int) -> void:
+	_player_bar.set_values(hp, max_hp)
+
+func on_enemy_hp_changed(hp: int, max_hp: int) -> void:
+	_enemy_bar.set_values(hp, max_hp)
+
+## Instant feedback for a drunk or thrown consumable.
+func on_item_used(_item_id: StringName, _charges_left: int) -> void:
+	_fx.burst(Vector2(size.x * 0.5, _hit_point.y), Color(0.95, 0.75, 0.3), 0.9)
+	Audio.play(&"souls_gain")
 
 func on_player_attacked(damage: int, enemy_hp: int) -> void:
 	_enemy_bar.set_values(enemy_hp, _enemy_max)
@@ -567,7 +770,11 @@ func _enemy_focus() -> Vector2:
 	return _rig.part_center(&"head") if _rig.has_part(&"head") else _rig.global_position
 
 func _weapon_point() -> Vector2:
-	return _rig.part_center(&"weapon") if _rig.has_part(&"weapon") else _rig.global_position
+	# Weaponless rigs (crow, wings and beak) ring the body, never the rig origin.
+	for part: StringName in [&"weapon", &"body", &"torso", &"head"]:
+		if _rig.has_part(part):
+			return _rig.part_center(part)
+	return _rig.global_position
 
 func _load_background(background_name: StringName) -> void:
 	var path := BattlePaths.background(background_name)
@@ -644,11 +851,22 @@ func _layout() -> void:
 	if _landscape:
 		rig_scale = minf(rig_scale, size.y * LANDSCAPE_INK_SHARE / RIG_INK_HEIGHT)
 	var bg_scale := maxf(maxf(size.x / BG_SIZE.x, ground_y / BG_GROUND_Y), (size.y - ground_y) / BG_BELOW_GROUND)
+	_background.visible = _road == null
 	_background.position = Vector2((size.x - BG_SIZE.x * bg_scale) * 0.5, ground_y - BG_GROUND_Y * bg_scale)
 	_background.size = BG_SIZE * bg_scale
 	if _rig != null:
-		_rig.position = Vector2(size.x * 0.5 - 512.0 * rig_scale, ground_y - RIG_FEET_Y * rig_scale)
-		_rig.scale = Vector2.ONE * rig_scale
+		var near_y := ground_y
+		if _road != null:
+			rig_scale *= ROAD_RIG_SHARE
+			near_y = size.y * ROAD_FEET_Y_SHARE
+		var far_y := lerpf(size.y * RoadScene.HORIZON, near_y, 0.5)
+		var feet_y := lerpf(far_y, near_y, inverse_lerp(STEP_FAR_SCALE, 1.0, _step))
+		var shown := rig_scale * _step
+		_rig.position = Vector2(size.x * 0.5 - 512.0 * shown, feet_y - RIG_FEET_Y * shown)
+		_rig.scale = Vector2.ONE * shown
+		if _shadow != null:
+			_shadow.position = Vector2(size.x * 0.5, feet_y)
+			_shadow.scale = Vector2(SHADOW_HALF_WIDTH, SHADOW_HALF_HEIGHT) * shown
 	_layout_hud(size, bars_top)
 	if _scheme != null:
 		_scheme.layout(size)

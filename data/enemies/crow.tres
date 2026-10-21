@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/attack_step_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="s1"]
+script = ExtResource("2")
+kind_id = &"combo"
+telegraph_times = PackedFloat32Array(0.4, 0.25, 0.25, 0.25)
+damage_scale = 0.5
+strike_gap = 0.05
+recovery_time = 0.8
+
+[sub_resource type="Resource" id="s2"]
+script = ExtResource("2")
+kind_id = &"quick"
+telegraph_time = 0.5
+recovery_time = 0.7
+
+[sub_resource type="Resource" id="s3"]
+script = ExtResource("2")
+kind_id = &"feint"
+telegraph_time = 0.4
+recovery_time = 0.3
+imitates = &"quick"
+
+[sub_resource type="Resource" id="s4"]
+script = ExtResource("2")
+kind_id = &"combo"
+telegraph_times = PackedFloat32Array(0.4, 0.25, 0.25)
+damage_scale = 0.5
+strike_gap = 0.05
+recovery_time = 0.9
+
+[resource]
+script = ExtResource("1")
+id = &"crow"
+name_key = "ENEMY_CROW"
+hp = 105
+damage = 13
+pattern = Array[ExtResource("2")]([SubResource("s1"), SubResource("s2"), SubResource("s3"), SubResource("s4")])
+palette_tag = &"pale"
+souls_reward = 12
+opening_delay = 1.2
+post_stagger_delay = 0.6

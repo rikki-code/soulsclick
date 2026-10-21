@@ -327,7 +327,7 @@ func _begin_telegraph() -> void:
 
 func _on_telegraph_done() -> void:
 	var result := _kind.resolve(self, _strike_index)
-	result.damage = outgoing_damage(enemy, player, result.damage)
+	result.damage = mini(outgoing_damage(enemy, player, result.damage), _hit_cap())
 	deal_damage(player, result.damage, [TAG_STRIKE], 0)
 	player.spend_stamina(result.stamina_cost)
 	_fire_strike_hooks(result)
@@ -356,6 +356,10 @@ func _on_telegraph_done() -> void:
 	_enemy_wait = _kind.step.recovery_time
 	_kind = null
 	enter_state(enemy, IdleState.new())
+
+## Largest damage one enemy hit may deal to the player: max_hit_share of max hp, at least 1.
+func _hit_cap() -> int:
+	return maxi(ceili(player.max_hp * player.stats.value(CombatStats.MAX_HIT_SHARE)), 1)
 
 func _fire_fight_start() -> void:
 	player.mods.reset_fight()

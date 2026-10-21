@@ -8,6 +8,7 @@ id = &"ember_bomb"
 name_key = "ITEM_EMBER_BOMB"
 desc_key = "ITEM_EMBER_BOMB_DESC"
 icon = &"ember_bomb"
+icon_path = "res://view/packs/icon_pack/silhouette_pack/items/ember_bomb.svg"
 price_souls = 25
 charges_per_buy = 1
 damage = 60

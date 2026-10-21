@@ -114,6 +114,15 @@ func complete_room(result: RoomResult) -> bool:
 	_advance()
 	return true
 
+## Doors of the step after the room being played (the pending step while choosing doors): null past the realm's last
+## step or when it has fewer than 2 doors (no fork).
+func peek_next_offer() -> DoorOffer:
+	var step := step_index + (1 if phase == PHASE_ROOM else 0)
+	if phase != PHASE_ROOM and phase != PHASE_DOORS or step >= realm().step_count():
+		return null
+	var next := DoorGenerator.generate_at(self, depth, step)
+	return next if next.doors.size() > 1 else null
+
 func abandon() -> void:
 	if phase != PHASE_ENDED:
 		_end(AbandonOutcome.ABANDON_ID)

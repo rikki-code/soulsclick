@@ -3,19 +3,23 @@ class_name DoorGenerator
 extends RefCounted
 
 static func generate(run: Run) -> DoorOffer:
+	return generate_at(run, run.depth, run.step_index)
+
+## Doors of any step of the run's current realm; `run` only lends seed, realm and curve.
+static func generate_at(run: Run, depth: int, step_index: int) -> DoorOffer:
 	var realm := run.realm()
-	var rule := realm.rule_at(run.step_index)
-	var rng := RunRng.stream(run.config.seed, RunRng.MAP, run.depth, run.step_index)
+	var rule := realm.rule_at(step_index)
+	var rng := RunRng.stream(run.config.seed, RunRng.MAP, depth, step_index)
 	var offer := DoorOffer.new()
 	offer.realm_index = run.realm_index
-	offer.depth = run.depth
+	offer.depth = depth
 	offer.realm_id = realm.id
-	offer.step_index = run.step_index
+	offer.step_index = step_index
 	offer.step_count = realm.step_count()
 	var taken := {}
 	var doors: Array[Door] = []
 	for kind_id in rule.required_kinds:
-		_add(doors, taken, kind_id, realm, rng, run.depth)
+		_add(doors, taken, kind_id, realm, rng, depth)
 	var wanted := maxi(_door_count(rule, rng), doors.size())
 	var candidates: Array[StringName] = []
 	for kind_id in rule.kind_weights:
@@ -27,7 +31,7 @@ static func generate(run: Run) -> DoorOffer:
 		var picked := WeightedPick.index(rng, weights)
 		if picked < 0:
 			break
-		if not _add(doors, taken, candidates[picked], realm, rng, run.depth):
+		if not _add(doors, taken, candidates[picked], realm, rng, depth):
 			candidates.remove_at(picked)
 	_shuffle(doors, rng)
 	for i in doors.size():

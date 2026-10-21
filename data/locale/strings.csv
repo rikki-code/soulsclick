@@ -73,6 +73,8 @@ RUN_STATUS,HP %d/%d    Souls %d,Здоровье %d/%d    Души %d
 ROOM_FIGHT,Fight,Бой
 ROOM_ELITE,Elite,Элита
 ROOM_BOSS,Boss,Босс
+ROOM_HOME,Home,Домой
+ROOM_DEEPER,Deeper,Глубже
 ROOM_ALTAR,Altar,Алтарь
 ROOM_SHOP,Shop,Лавка
 ROOM_BONFIRE,Bonfire,Костёр
@@ -158,3 +160,29 @@ ENEMY_WRETCH,Reliquary Wretch,Реликварная тварь
 REALM_2,Drowned Crypt,Затопленный склеп
 REALM_3,Bone Cathedral,Костяной собор
 REALM_4,Ashen Abyss,Пепельная бездна
+REWARD_TITLE,Choose a reward,Выберите награду
+REWARD_KIND_RELIC,Relic,Реликвия
+REWARD_KIND_STAT_LEVEL,Training,Тренировка
+REWARD_KIND_CONSUMABLE,Supplies,Припасы
+REWARD_KIND_SOULS,Souls,Души
+REWARD_KIND_HEAL,Rest,Отдых
+REWARD_CARD_SOULS,Soul cache,Тайник душ
+REWARD_CARD_SOULS_DESC,+%d Souls.,+%d душ.
+REWARD_CARD_HEAL,Bandage,Перевязка
+REWARD_CARD_HEAL_DESC,Restore %d%% of max HP.,Восстанавливает %d%% макс. здоровья.
+REWARD_STAT_MAX_HP,Vitality,Живучесть
+REWARD_STAT_MAX_HP_DESC,+%d max HP until the run ends.,+%d макс. здоровья до конца забега.
+REWARD_STAT_MAX_STAMINA,Endurance,Выносливость
+REWARD_STAT_MAX_STAMINA_DESC,+%d max stamina until the run ends.,+%d макс. выносливости до конца забега.
+REWARD_STAT_ATTACK_DAMAGE,Strength,Сила
+REWARD_STAT_ATTACK_DAMAGE_DESC,+%d damage until the run ends.,+%d урона до конца забега.
+REWARD_STAT_STAMINA_REGEN,Recovery,Восстановление
+REWARD_STAT_STAMINA_REGEN_DESC,+%d stamina regen until the run ends.,+%d восст. выносливости до конца забега.
+PORTAL_HOME,Home,Домой
+PORTAL_HOME_LINE,Bank %d Souls as Embers,Обменять %d душ на угли
+PORTAL_DEEPER,Deeper,Глубже
+PORTAL_DEEPER_LINE,"Realm %d, risk the Souls","Царство %d, души под угрозой"
+ENEMY_THRALL,Ash Thrall,Пепельный раб
+ENEMY_CROW,Carrion Crow,Падальщик-ворон
+ENEMY_CHOIRBOY,Bone Choirboy,Костяной хорист
+ENEMY_GARGOYLE,Cathedral Gargoyle,Горгулья собора

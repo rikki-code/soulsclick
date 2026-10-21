@@ -8,6 +8,7 @@ id = &"flask"
 name_key = "ITEM_FLASK"
 desc_key = "ITEM_FLASK_DESC"
 icon = &"flask"
+icon_path = "res://view/packs/icon_pack/silhouette_pack/items/flask.svg"
 price_souls = 30
 charges_per_buy = 2
 heal_share = 0.35

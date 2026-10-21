@@ -7,6 +7,8 @@ extends Resource
 @export var name_key := ""
 @export var desc_key := ""
 @export var icon: StringName
+## res:// path of the SVG shown in the shop and reward cards.
+@export var icon_path := ""
 @export var price_souls := 0
 
 func is_consumable() -> bool:

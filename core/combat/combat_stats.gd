@@ -25,6 +25,8 @@ const PUNISH_MULT := &"punish_mult"
 const TELEGRAPH_SCALE := &"telegraph_scale"
 const DAMAGE_TAKEN_MULT := &"damage_taken_mult"
 const DAMAGE_DEALT_MULT := &"damage_dealt_mult"
+## One enemy hit never takes more than this share of the target's max hp (applied after armor and block).
+const MAX_HIT_SHARE := &"max_hit_share"
 
 var _base := {}
 var _cache := {}
@@ -57,6 +59,7 @@ static func tuning_base(tuning: CombatTuning) -> Dictionary:
 		TELEGRAPH_SCALE: 1.0,
 		DAMAGE_TAKEN_MULT: 1.0,
 		DAMAGE_DEALT_MULT: 1.0,
+		MAX_HIT_SHARE: tuning.max_hit_share,
 	}
 
 func set_base(stat_id: StringName, value: float) -> void:
