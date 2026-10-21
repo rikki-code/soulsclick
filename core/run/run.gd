@@ -105,7 +105,7 @@ func complete_room(result: RoomResult) -> bool:
 	var record := {
 		"realm": entered.realm_index, "depth": entered.depth, "step": entered.step_index, "kind": entered.kind_id,
 		"variant": entered.door.variant, "affix": entered.affix_id, "door": entered.door_index,
-		"souls_gained": souls - souls_before, "hp_after": hp,
+		"souls_gained": souls - souls_before + result.souls_paid, "hp_after": hp,
 	}
 	history.append(record)
 	plan = null

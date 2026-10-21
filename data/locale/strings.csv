@@ -10,7 +10,7 @@ SETTINGS_MUSIC,Music,Музыка
 SETTINGS_SFX,Sound effects,Звуки
 SETTINGS_LANGUAGE,Language,Язык
 SETTINGS_CONTROLS,Controls,Управление
-CONTROLS_HANDS,Hands,Руки
+CONTROLS_HANDS,Screen halves,Половины экрана
 CONTROLS_BUTTONS,Buttons,Кнопки
 CONTROLS_SWIPES,Swipes,Свайпы
 LANGUAGE_AUTO,Auto,Авто
@@ -147,6 +147,8 @@ ALTAR_HINT,Offer Souls to grow stronger for this run.,"Пожертвуйте д
 ALTAR_LEVEL,"%s: %s → %s  (%d souls)","%s: %s → %s  (%d душ)"
 ALTAR_BUFF,"%s: %s  (%d souls)","%s: %s  (%d душ)"
 ALTAR_LEAVE,Leave the altar,Уйти от алтаря
+ALTAR_USE,Use,Выпить
+ALTAR_HP,HP,Жизнь
 REWARD_ALTAR,Upgrades for souls,Улучшения за души
 ALTAR_WATCH_AD,"  (watch ad)","  (смотреть рекламу)"
 AD_BADGE,AD,РЕК

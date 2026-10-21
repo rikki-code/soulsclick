@@ -7,10 +7,8 @@ BASE = os.path.normpath(os.path.join(HERE, ".."))
 
 
 def flask(ic):
-    ic.sil([(112, 28), (144, 28), (144, 52), (112, 52)], fill=SIL2)
-    ic.sil([(116, 50), (140, 50), (140, 92), (180, 148), (186, 190), (166, 218), (90, 218), (70, 190), (76, 148), (116, 92)])
-    ic.smooth([(86, 150), (170, 150), (176, 186), (160, 206), (96, 206), (80, 186)], fill=ic.A, stroke=None)
-    ic.hi([(120, 58), (120, 94), (84, 148)])
+    """Red healing potion with a white cross: reads as "heals" without the accent tag colour."""
+    ic.items.append(open(os.path.join(HERE, "flask_body.svgfrag")).read().strip())
 
 
 def ember_bomb(ic):

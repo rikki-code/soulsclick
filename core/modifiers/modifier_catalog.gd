@@ -3,17 +3,17 @@ class_name ModifierCatalog
 extends RefCounted
 
 static var _relics := {
-	MendersThread.ID: MendersThread.new,
-	GlassBlade.ID: GlassBlade.new,
-	CounterTide.ID: CounterTide.new,
-	PhoenixAsh.ID: PhoenixAsh.new,
-	Overreach.ID: Overreach.new,
-	DuelistsPride.ID: DuelistsPride.new,
+	MendersThread.ID: func() -> Modifier: return MendersThread.new(),
+	GlassBlade.ID: func() -> Modifier: return GlassBlade.new(),
+	CounterTide.ID: func() -> Modifier: return CounterTide.new(),
+	PhoenixAsh.ID: func() -> Modifier: return PhoenixAsh.new(),
+	Overreach.ID: func() -> Modifier: return Overreach.new(),
+	DuelistsPride.ID: func() -> Modifier: return DuelistsPride.new(),
 }
 
 static var _affixes := {
-	SwiftAffix.ID: SwiftAffix.new,
-	PlatedAffix.ID: PlatedAffix.new,
+	SwiftAffix.ID: func() -> Modifier: return SwiftAffix.new(),
+	PlatedAffix.ID: func() -> Modifier: return PlatedAffix.new(),
 }
 
 static func has(mod_id: StringName) -> bool:

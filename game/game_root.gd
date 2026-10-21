@@ -44,6 +44,7 @@ signal _arrival_done
 var _arrival_token := 0
 ## Offer shown by the view right now; the pick handler applies it once.
 var _pending_offer: RewardOffer
+var _souls_paid := 0
 ## Relic modifiers currently on the player (swapped for fresh ones at every fight start).
 var _relic_mods: Array[Modifier] = []
 ## Realm whose road the persistent view shows, -1 = none yet.
@@ -283,6 +284,7 @@ func _ensure_view() -> void:
 	if _road_realm != realm_slot:
 		_road_realm = realm_slot
 		_view.set_road(realm_slot, _run.config.seed)
+	_sync_view_shop()
 
 ## Run page above the view: its backdrop is dimmed so the road shows through.
 func _show_overlay(screen: Control) -> void:
@@ -354,7 +356,15 @@ func _show_altar() -> void:
 			continue
 		buffs.append({"id": def.id, "name": tr(def.name_key), "info": tr(def.desc_key), "price": _inventory.price_of(def),
 			"affordable": _inventory.can_buy(def, _run.souls), "ad": _item_ad_offer(def)})
-	var altar := AltarScreen.new().setup(_run, levels, buffs)
+	var items: Array[Dictionary] = []
+	for row in _shop_items():
+		var def := ItemCatalog.get_def(row["id"]) as ConsumableItem
+		row["can_use"] = def != null and def.heal_share > 0.0 and int(row["count"]) > 0 and _run.hp < _run.config.max_hp
+		items.append(row)
+	var altar := AltarScreen.new().setup(_run, levels, buffs, items)
+	altar.item_use_requested.connect(func(item_id: StringName) -> void:
+		_use_item_at_altar(item_id)
+		_show_altar())
 	altar.level_requested.connect(func(stat: StringName) -> void:
 		if await _buy_run_level_or_ad(stat):
 			_save_run()
@@ -365,6 +375,37 @@ func _show_altar() -> void:
 	altar.leave_requested.connect(_on_place_finished.bind(&""))
 	_show_overlay(altar)
 
+## On the road (walking, at a fork, over the reward cards) a healing consumable works at once on the run's hp.
+## Anything else, or a full health bar, keeps the charge.
+func _use_item_between_fights(item_id: StringName) -> void:
+	var def := ItemCatalog.get_def(item_id) as ConsumableItem
+	var max_hp := _run.config.max_hp
+	# Over the reward cards the finished duel still holds the hp that the room will report back.
+	var hp := _duel.player.hp if _duel != null else _run.hp
+	if def == null or def.heal_share <= 0.0 or hp >= max_hp or _inventory.take_charge(item_id) == null:
+		return
+	hp = mini(hp + ceili(max_hp * def.heal_share), max_hp)
+	if _duel != null:
+		_duel.player.hp = hp
+	else:
+		_run.heal(hp - _run.hp)
+	if _view != null:
+		_view.on_player_hp_changed(hp, max_hp)
+		_view.on_item_used(item_id, _inventory.charges(item_id))
+	_sync_view_shop()
+	_save_run()
+
+## Outside a fight only healing consumables do anything: drink one and the run's hp goes up.
+func _use_item_at_altar(item_id: StringName) -> void:
+	var def := ItemCatalog.get_def(item_id) as ConsumableItem
+	if def == null or def.heal_share <= 0.0 or _inventory.take_charge(item_id) == null:
+		return
+	_run.heal(ceili(_run.config.max_hp * def.heal_share))
+	if _view != null:
+		_view.on_player_hp_changed(_run.hp, _run.config.max_hp)
+		_view.on_item_used(item_id, _inventory.charges(item_id))
+	_save_run()
+
 func _on_place_finished(choice: StringName) -> void:
 	var result := RoomResult.victory()
 	result.choice = choice
@@ -372,8 +413,15 @@ func _on_place_finished(choice: StringName) -> void:
 
 ## Reports the room to the run and moves on to the next screen (or the summary).
 func _complete(result: RoomResult) -> void:
+	result.souls_paid = _souls_paid
+	_souls_paid = 0
 	_run.complete_room(result)
 	_clear_overlay()
+	# Whatever the room gave or took (reward flask, altar purchase, bonfire) shows in the slots right away.
+	_sync_view_shop()
+	if _view != null:
+		_view.on_player_hp_changed(_run.hp, _run.config.max_hp)
+		_view.set_souls(_run.souls)
 	if _run.is_ended():
 		_finish_run()
 	else:
@@ -431,7 +479,7 @@ func _on_buy_item_requested(item_id: StringName) -> void:
 	else:
 		return
 	# Battle slot: a consumable bought by a tap is used in the same tap (stays stored if it cannot be used now).
-	if _duel != null and def.is_consumable():
+	if def.is_consumable() and _view != null:
 		_use_item_now_or_soon(item_id)
 	_sync_view_shop()
 	_save_run()
@@ -454,7 +502,8 @@ func _on_use_item_requested(item_id: StringName) -> void:
 ## Drinking is only allowed while idle or guarding. A tap during a swing or a stagger would be rejected and
 ## the item would look dead, so it is remembered for a moment and used the instant the player is free.
 func _use_item_now_or_soon(item_id: StringName) -> void:
-	if _duel == null:
+	if _duel == null or _duel.finished:
+		_use_item_between_fights(item_id)
 		return
 	if _duel.player.state is IdleState or _duel.player.state is BlockingState:
 		_queued_item = &""
@@ -709,7 +758,11 @@ func _next_wave_enemy() -> void:
 ## Last wave down: banner, then the reward cards (or straight on when there is nothing to pick).
 func _on_room_won() -> void:
 	var duel := _duel
-	_view.show_victory(_run.plan.souls_reward)
+	# The Souls are yours the moment the last enemy falls (the room only books them as already paid).
+	_souls_paid = _run.plan.souls_reward
+	_run.add_souls(_souls_paid)
+	_view.set_souls(_run.souls)
+	_view.show_victory(_souls_paid)
 	var offer := RewardGenerator.generate(_run, _run.plan, _reward_ctx)
 	await get_tree().create_timer(VICTORY_BANNER).timeout
 	if _duel != duel or _view == null or _view.is_queued_for_deletion():
@@ -725,11 +778,19 @@ func _on_reward_picked(index: int) -> void:
 	if offer == null or _duel == null:
 		return
 	_pending_offer = null
-	var hp_before := _run.hp
+	# The finished duel holds the real hp; hand it to the run first so a heal card is not lost to a stale value.
+	var hp_fight := _duel.player.hp
+	_run.heal(hp_fight - _run.hp)
 	offer.apply(index, _run, _reward_ctx)
 	_refresh_max_hp()
-	# Heals went to the run's hp; the duel's hp is the truth now, so carry the gain over.
-	var hp_after := clampi(_duel.player.hp + _run.hp - hp_before, 1, _run.config.max_hp)
+	var hp_after := clampi(_run.hp, 1, _run.config.max_hp)
+	# Everything the card gave shows at once: hp bar, Souls, slots.
+	_duel.player.hp = hp_after
+	_view.on_player_hp_changed(hp_after, _run.config.max_hp)
+	_view.set_souls(_run.souls)
+	_sync_view_shop()
+	if hp_after > hp_fight:
+		_view.on_item_used(&"flask", 0)
 	_complete(RoomResult.victory(hp_after))
 
 ## Rewarded revive: the same duel continues, the view restarts on its numbers.

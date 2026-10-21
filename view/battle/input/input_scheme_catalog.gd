@@ -1,10 +1,9 @@
 ## Lists the input schemes by id and builds them. Translation keys follow the id: CONTROLS_<ID>, HINT_<ID>.
-## With no saved choice the default is Hands on touch devices (including mobile web) and Buttons elsewhere.
+## With no saved choice the default is Hands everywhere (the scheme is shown as "Screen halves").
 class_name InputSchemeCatalog
 extends RefCounted
 
-const DEFAULT_TOUCH := &"hands"
-const DEFAULT_POINTER := &"buttons"
+const DEFAULT_ID := &"hands"
 
 static func ids() -> Array[StringName]:
 	var result: Array[StringName] = []
@@ -16,7 +15,7 @@ static func has(id: StringName) -> bool:
 	return _factories().has(id)
 
 static func default_id() -> StringName:
-	return DEFAULT_TOUCH if is_touch_device() else DEFAULT_POINTER
+	return DEFAULT_ID
 
 static func resolve(saved_id: String) -> StringName:
 	var id := StringName(saved_id)

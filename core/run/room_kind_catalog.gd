@@ -3,12 +3,12 @@ class_name RoomKindCatalog
 extends RefCounted
 
 static var _factories := {
-	FightRoom.ID: FightRoom.new,
-	EliteRoom.ID: EliteRoom.new,
-	AltarRoom.ID: AltarRoom.new,
-	ShopRoom.ID: ShopRoom.new,
-	BonfireRoom.ID: BonfireRoom.new,
-	BossRoom.ID: BossRoom.new,
+	FightRoom.ID: func() -> RoomKind: return FightRoom.new(),
+	EliteRoom.ID: func() -> RoomKind: return EliteRoom.new(),
+	AltarRoom.ID: func() -> RoomKind: return AltarRoom.new(),
+	ShopRoom.ID: func() -> RoomKind: return ShopRoom.new(),
+	BonfireRoom.ID: func() -> RoomKind: return BonfireRoom.new(),
+	BossRoom.ID: func() -> RoomKind: return BossRoom.new(),
 }
 static var _instances := {}
 

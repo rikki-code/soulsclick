@@ -95,7 +95,7 @@ func make_preview(run: Run, door: Door) -> Dictionary:
 
 func complete(run: Run, plan: RoomPlan, result: RoomResult) -> void:
 	super.complete(run, plan, result)
-	run.add_souls(plan.souls_reward)
+	run.add_souls(maxi(plan.souls_reward - result.souls_paid, 0))
 	var share := heal_share(run.realm())
 	if share > 0.0:
 		run.heal(roundi(run.config.max_hp * share))

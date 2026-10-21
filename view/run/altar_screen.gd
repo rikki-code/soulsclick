@@ -5,6 +5,7 @@ extends RunScreen
 
 signal level_requested(stat: StringName)
 signal buff_requested(item_id: StringName)
+signal item_use_requested(item_id: StringName)
 signal leave_requested
 
 const GOLD := Color(1.0, 0.82, 0.38)
@@ -23,7 +24,7 @@ var _grid: GridContainer
 var _tiles := {}
 
 ## `levels` rows: {id, name, value, next, price, affordable, ad}; `buffs` rows: {id, name, info, price, affordable, ad}.
-func setup(run: Run, levels: Array[Dictionary], buffs: Array[Dictionary]) -> AltarScreen:
+func setup(run: Run, levels: Array[Dictionary], buffs: Array[Dictionary], items: Array[Dictionary] = []) -> AltarScreen:
 	add_child(MenuKit.background())
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -54,6 +55,8 @@ func setup(run: Run, levels: Array[Dictionary], buffs: Array[Dictionary]) -> Alt
 		var detail := "%s  →  %s" % [row["value"], row["next"]]
 		_tile(row, row["name"], detail, level_requested.emit.bind(row["id"]))
 	for row in buffs:
+		_tile(row, row["name"], row["info"], buff_requested.emit.bind(row["id"]))
+	for row in items:
 		_tile(row, row["name"], row["info"], buff_requested.emit.bind(row["id"]))
 	var leave := Button.new()
 	leave.text = tr("ALTAR_LEAVE")
@@ -88,6 +91,9 @@ func _header(parent: Control, run: Run) -> void:
 	var souls := MenuKit.label(str(run.souls), 60)
 	souls.add_theme_color_override("font_color", GOLD)
 	box.add_child(souls)
+	var life := MenuKit.label("%s %d/%d" % [tr("ALTAR_HP"), run.hp, run.config.max_hp], 36)
+	life.add_theme_color_override("font_color", Color(0.95, 0.4, 0.45))
+	box.add_child(life)
 	var hint := _tile_label(tr("ALTAR_HINT"), 20, MUTED, 2)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -128,6 +134,17 @@ func _tile(row: Dictionary, title: String, detail: String, on_pressed: Callable)
 	box.add_child(_tile_label(title, 28, Color.WHITE, 1))
 	box.add_child(_tile_label(detail, 20, MUTED, 2))
 	line.add_child(_price_row(int(row["price"]), affordable, ad))
+	var use_button: Button = null
+	if bool(row.get("can_use", false)):
+		use_button = Button.new()
+		use_button.text = "%s x%d" % [tr("ALTAR_USE"), int(row["count"])]
+		use_button.custom_minimum_size = Vector2(110, 0)
+		use_button.add_theme_font_size_override("font_size", 24)
+		use_button.add_theme_color_override("font_color", Color(0.55, 0.85, 0.6))
+		use_button.pressed.connect(func() -> void:
+			_last_bought = row["id"]
+			item_use_requested.emit(row["id"]))
+		line.add_child(use_button)
 	inner.modulate = Color.WHITE if usable else Color(1, 1, 1, 0.45)
 	tile.pressed.connect(func() -> void:
 		_last_bought = row["id"]

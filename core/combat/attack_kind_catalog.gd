@@ -3,10 +3,10 @@ class_name AttackKindCatalog
 extends RefCounted
 
 static var _factories := {
-	QuickAttack.ID: QuickAttack.new,
-	HeavyAttack.ID: HeavyAttack.new,
-	FeintAttack.ID: FeintAttack.new,
-	ComboAttack.ID: ComboAttack.new,
+	QuickAttack.ID: func(step: AttackStepDefinition) -> AttackKind: return QuickAttack.new(step),
+	HeavyAttack.ID: func(step: AttackStepDefinition) -> AttackKind: return HeavyAttack.new(step),
+	FeintAttack.ID: func(step: AttackStepDefinition) -> AttackKind: return FeintAttack.new(step),
+	ComboAttack.ID: func(step: AttackStepDefinition) -> AttackKind: return ComboAttack.new(step),
 }
 
 static func has(kind_id: StringName) -> bool:

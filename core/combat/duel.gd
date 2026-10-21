@@ -44,6 +44,8 @@ const REJECT_NO_ITEM := &"no_item"
 const TAG_STRIKE := &"strike"
 ## Longest slice advance() simulates at once, so timing does not depend on the caller's frame rate.
 const MAX_SUBSTEP := 0.02
+## The enemy never stands idle longer than this before its first swing (the road flow has no intro to hide it).
+const OPENING_DELAY_CAP := 0.6
 
 var tuning: CombatTuning
 var definition: EnemyDefinition
@@ -80,7 +82,7 @@ func _init(p_tuning: CombatTuning, p_definition: EnemyDefinition, p_seed: int = 
 	enemy = Fighter.make_enemy(definition, scaling, tuning)
 	pattern = AttackPattern.new(definition.pattern)
 	rng.seed = p_seed
-	_enemy_wait = definition.opening_delay
+	_enemy_wait = minf(definition.opening_delay, OPENING_DELAY_CAP)
 	_last_stamina = player.stamina
 	player.mods.reseed(p_seed)
 	enemy.mods.reseed(p_seed + 1)

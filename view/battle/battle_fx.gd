@@ -12,6 +12,8 @@ const NUMBER_FONT := 56
 const FLASH_PEAK := 0.55
 const SHAKE_SECONDS := 0.3
 const FX_Z := 60
+const BLAST_RADIUS := 170.0
+const BLAST_SECONDS := 0.55
 const HIT_SPREAD_X := 90.0
 const HIT_SPREAD_Y := 40.0
 const HIT_SCALE := 0.75
@@ -69,6 +71,34 @@ func burst(at: Vector2, color: Color, power := 1.0) -> void:
 	sparks.initial_velocity_max = 520.0 * power
 	sparks.restart()
 	sparks.emitting = true
+
+## A bomb going off: orange fireball that swells and cools, a shock ring, a wave of embers, a flash and a heavy shake.
+func explosion(at: Vector2, scale_factor := 1.0) -> void:
+	var blast := Control.new()
+	blast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	blast.z_index = FX_Z
+	blast.position = at
+	add_child(blast)
+	var radius := BLAST_RADIUS * scale_factor
+	var state := {"t": 0.0}
+	blast.draw.connect(func() -> void:
+		var t: float = state["t"]
+		var core := radius * (0.25 + 0.75 * sqrt(t))
+		var fade := 1.0 - t
+		blast.draw_circle(Vector2.ZERO, core * 1.25, Color(0.95, 0.35, 0.08, 0.35 * fade))
+		blast.draw_circle(Vector2.ZERO, core, Color(1.0, 0.55, 0.12, 0.8 * fade))
+		blast.draw_circle(Vector2.ZERO, core * 0.6, Color(1.0, 0.85, 0.4, 0.9 * fade))
+		blast.draw_circle(Vector2.ZERO, core * 0.25, Color(1.0, 0.97, 0.85, fade))
+		blast.draw_arc(Vector2.ZERO, radius * (0.4 + 1.3 * t), 0.0, TAU, 48, Color(1.0, 0.8, 0.45, 0.8 * fade), 6.0 * fade + 1.0, true))
+	var tween := blast.create_tween()
+	tween.tween_method(func(t: float) -> void:
+		state["t"] = t
+		blast.queue_redraw(), 0.0, 1.0, BLAST_SECONDS).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(blast.queue_free)
+	burst(at, Color(1.0, 0.6, 0.15), 2.2)
+	burst(at, Color(1.0, 0.9, 0.5), 1.4)
+	flash(Color(1.0, 0.6, 0.2), 0.5, 0.35)
+	shake(22.0 * scale_factor, 0.45)
 
 func number(at: Vector2, text: String, color: Color, scale_factor := 1.0, seconds := NUMBER_SECONDS, rise := NUMBER_RISE) -> void:
 	var label := _numbers[_next_number]

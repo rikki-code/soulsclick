@@ -46,13 +46,13 @@ const LANDSCAPE_BARS_HEIGHT := 82.0
 const LANDSCAPE_BARS_WIDTH_SHARE := 0.36
 const BARS_Z := 100
 const NAME_FONT := 40
-const HINT_FONT := 44
+const HINT_FONT := 38
 const HINT_SECONDS := 5.0
 const HINT_FADE := 0.6
 const HINT_WIDTH_SHARE := 0.8
-const LANDSCAPE_HINT_WIDTH_SHARE := 0.22
-const LANDSCAPE_HINT_Y_SHARE := 0.16
-const LANDSCAPE_HINT_HEIGHT := 300.0
+const LANDSCAPE_HINT_WIDTH_SHARE := 0.26
+const LANDSCAPE_HINT_Y_SHARE := 0.3
+const LANDSCAPE_HINT_HEIGHT := 260.0
 const RING_SCALE_REF := 1704.0
 const RING_SCALE_MIN := 0.7
 const RING_SCALE_MAX := 1.3
@@ -481,8 +481,17 @@ func on_enemy_hp_changed(hp: int, max_hp: int) -> void:
 	_enemy_bar.set_values(hp, max_hp)
 
 ## Instant feedback for a drunk or thrown consumable.
-func on_item_used(_item_id: StringName, _charges_left: int) -> void:
-	_fx.burst(Vector2(size.x * 0.5, _hit_point.y), Color(0.95, 0.75, 0.3), 0.9)
+func on_item_used(item_id: StringName, _charges_left: int) -> void:
+	var def := ItemCatalog.get_def(item_id) as ConsumableItem
+	if def != null and def.damage > 0:
+		_fx.explosion(_enemy_focus())
+		_rig.flash(0.3)
+		Audio.play(&"attack")
+		return
+	var heals := def != null and def.heal_share > 0.0
+	_fx.burst(Vector2(size.x * 0.5, _hit_point.y), Color(0.95, 0.35, 0.4) if heals else Color(0.95, 0.75, 0.3), 0.9)
+	if heals:
+		_fx.flash(Color(0.4, 1.0, 0.55), 0.18, 0.3)
 	Audio.play(&"souls_gain")
 
 func on_player_attacked(damage: int, enemy_hp: int) -> void:

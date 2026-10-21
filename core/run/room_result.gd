@@ -7,6 +7,8 @@ var won := true
 var hp_after := -1
 var souls_bonus := 0
 var souls_spent := 0
+## Souls of the fight reward the game layer already added to the run (shown at once), so the room does not add them again.
+var souls_paid := 0
 ## Choice made in the room (bonfire option, shop purchase summary); kind specific.
 var choice: StringName = &""
 var flawless := false

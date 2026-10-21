@@ -3,9 +3,9 @@ class_name RunOutcomeCatalog
 extends RefCounted
 
 static var _factories := {
-	VictoryOutcome.ID: VictoryOutcome.new,
-	DeathOutcome.ID: DeathOutcome.new,
-	AbandonOutcome.ABANDON_ID: AbandonOutcome.new,
+	VictoryOutcome.ID: func() -> RunOutcome: return VictoryOutcome.new(),
+	DeathOutcome.ID: func() -> RunOutcome: return DeathOutcome.new(),
+	AbandonOutcome.ABANDON_ID: func() -> RunOutcome: return AbandonOutcome.new(),
 }
 
 static func has(outcome_id: StringName) -> bool:
