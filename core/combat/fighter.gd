@@ -89,6 +89,22 @@ func heal(amount: int) -> void:
 func spend_stamina(amount: float) -> void:
 	stamina = maxf(stamina - amount, 0.0)
 
+## Passive recovery outside a duel (road, rewards, altar): stamina and the block cooldown tick like an idle fighter in a duel.
+func recover(dt: float) -> void:
+	block_cooldown = maxf(block_cooldown - dt, 0.0)
+	stamina = minf(stamina + stamina_regen * dt, max_stamina)
+
+## Back to rest after a duel ended mid-action (swing, guard, stagger). Keeps hp, stamina and cooldown.
+func settle() -> void:
+	state = IdleState.new()
+	state_elapsed = 0.0
+	holding_block = false
+
+## Call once when the fighter is thrown away (enemy after its duel, player after the run): breaks the reference cycles.
+func dispose() -> void:
+	mods.dispose()
+	stats.dispose()
+
 func advance(duel: Duel, dt: float) -> void:
 	state_elapsed += dt
 	block_cooldown = maxf(block_cooldown - dt, 0.0)

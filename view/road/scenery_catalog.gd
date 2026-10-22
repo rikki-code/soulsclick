@@ -3,6 +3,8 @@ class_name SceneryCatalog
 extends RefCounted
 
 const REALMS := 4
+## Bright tutorial floor; not part of the cycling realms.
+const TUTORIAL := 4
 
 
 class Pine extends SceneryKind:
@@ -108,6 +110,32 @@ class AshPatch extends SceneryKind:
 		body = [blob(Vector2(0, -0.2), 0.5, 3.0, randf() * 6.0)]
 
 
+class Bush extends SceneryKind:
+	func _init() -> void:
+		size = 0.45
+		body = [blob(Vector2(0, -0.4), 0.5, 3.0, randf() * 6.0), blob(Vector2(-0.3, -0.25), 0.3, 2.0, 0.5),
+			blob(Vector2(0.3, -0.25), 0.3, 2.0, 1.5)]
+
+
+class Mushroom extends SceneryKind:
+	func _init() -> void:
+		size = 0.5
+		body = [sym([Vector2(0.09, -0.5), Vector2(0.12, 0)]), blob(Vector2(0, -0.62), 0.42, 2.0, 0.0)]
+
+
+class Lollipop extends SceneryKind:
+	func _init() -> void:
+		size = 1.0
+		body = [sym([Vector2(0.02, -0.6), Vector2(0.03, 0)]), blob(Vector2(0, -0.75), 0.25, 2.0, 0.0)]
+
+
+class Flower extends SceneryKind:
+	func _init() -> void:
+		size = 0.06
+		role = 3
+		body = [sym([Vector2(0.04, -0.6), Vector2(0.05, 0)]), blob(Vector2(0, -0.75), 0.25, 2.0, 0.0)]
+
+
 ## Colors and scenery of one realm.
 class Look extends RefCounted:
 	var sky_top: Color
@@ -146,9 +174,14 @@ class Look extends RefCounted:
 		return l
 
 
+## Index into the per-realm tables: the tutorial keeps its own slot, the rest cycle through REALMS.
+static func _slot(realm: int) -> int:
+	return TUTORIAL if realm == TUTORIAL else posmod(realm, REALMS)
+
+
 static func look(realm: int) -> Look:
 	var l := Look.new()
-	match posmod(realm, REALMS):
+	match _slot(realm):
 		0: # hollow forest road: cold blue-gray
 			l.sky_top = Color("#080b12"); l.sky_low = Color("#222e40"); l.ground = Color("#0d1117")
 			l.ground_alt = Color("#10151c"); l.road = Color("#1a212b"); l.road_far = Color("#2a3646")
@@ -169,6 +202,13 @@ static func look(realm: int) -> Look:
 			l.silhouette = Color("#0c0808"); l.accent = Color("#ff9a1f")
 			l.mountains = [Color("#2a1a17"), Color("#1c1210")]; l.peaks = 12; l.peak_height = 0.05
 			l.moon = Color(0.9, 0.55, 0.35, 0.4)
+		TUTORIAL: # tutorial floor: bright and soft
+			l.sky_top = Color("#bfe6ff"); l.sky_low = Color("#fff4d6"); l.ground = Color("#bde58a")
+			l.ground_alt = Color("#b3dc7c"); l.road = Color("#f3e2b8"); l.road_far = Color("#fbf0d0")
+			l.edge = Color("#d9c08f"); l.line = Color("#fffbe8"); l.fog = Color("#fdf6e3")
+			l.silhouette = Color("#6fbf73"); l.accent = Color("#ffd24a")
+			l.mountains = [Color("#a9d9c4"), Color("#c9e9b0")]; l.peaks = 5; l.peak_height = 0.035
+			l.moon = Color("#fff2a8")
 		_: # ember void: black with a red glow
 			l.sky_top = Color("#050405"); l.sky_low = Color("#3a0f0f"); l.ground = Color("#0a0606")
 			l.ground_alt = Color("#0e0808"); l.road = Color("#190d0d"); l.road_far = Color("#3a1616")
@@ -177,7 +217,7 @@ static func look(realm: int) -> Look:
 			l.mountains = [Color("#240b0b"), Color("#150707")]; l.peaks = 9; l.peak_height = 0.11
 			l.moon = Color(1.0, 0.3, 0.2, 0.45)
 
-	match posmod(realm, REALMS): # dirt trail tones: mud, bone-ash, blood-rust, black-stone
+	match _slot(realm): # dirt trail tones: mud, bone-ash, blood-rust, black-stone
 		0:
 			l.road = Color("#3b3024"); l.road_far = Color("#3a3a3a"); l.edge = Color("#0c0a07")
 			l.rut = Color("#150f09"); l.stone = Color("#5a5348"); l.bone = Color("#b8b09a"); l.patch = Color("#2c4a22")
@@ -190,6 +230,10 @@ static func look(realm: int) -> Look:
 			l.road = Color("#4d2c24"); l.road_far = Color("#4a2a22"); l.edge = Color("#120807")
 			l.rut = Color("#220e0b"); l.stone = Color("#6a4438"); l.bone = Color("#cbb89c"); l.patch = Color("#3a3029")
 			l.ragged = 0.17
+		TUTORIAL:
+			l.road = Color("#f3e2b8"); l.road_far = Color("#fbf0d0"); l.edge = Color("#d9c08f")
+			l.rut = Color("#e6cf9f"); l.stone = Color("#d9d2c3"); l.bone = Color("#fff7e0"); l.patch = Color("#a6d67a")
+			l.ragged = 0.06
 		_:
 			l.road = Color("#1f1a1c"); l.road_far = Color("#3a1616"); l.edge = Color("#030202")
 			l.rut = Color("#0a0607"); l.stone = Color("#352b2e"); l.bone = Color("#8c6a60"); l.patch = Color("#1a1213")
@@ -199,7 +243,7 @@ static func look(realm: int) -> Look:
 
 static func kinds_for(realm: int) -> Array[SceneryKind]:
 	var out: Array[SceneryKind] = []
-	match posmod(realm, REALMS):
+	match _slot(realm):
 		0:
 			out = [Pine.new(), Pine.new(), Pine.new(), RoundTree.new(), RoundTree.new(), DeadTree.new(),
 				Ruin.new(), Gravestone.new()]
@@ -209,6 +253,9 @@ static func kinds_for(realm: int) -> Array[SceneryKind]:
 		2:
 			out = [Ruin.new(), Ruin.new(), Ruin.new(), Tower.new(), Tower.new(), Spire.new(), DeadTree.new(),
 				Gravestone.new()]
+		TUTORIAL:
+			out = [RoundTree.new(), RoundTree.new(), RoundTree.new(), RoundTree.new(), Bush.new(), Bush.new(),
+				Mushroom.new(), Lollipop.new()]
 		_:
 			out = [Spire.new(), Spire.new(), Spire.new(), DeadTree.new(), DeadTree.new(), Tower.new(), Cross.new()]
 	return out
@@ -217,13 +264,15 @@ static func kinds_for(realm: int) -> Array[SceneryKind]:
 ## Flat things lying on the trail.
 static func decals_for(realm: int) -> Array[SceneryKind]:
 	var out: Array[SceneryKind] = []
-	match posmod(realm, REALMS):
+	match _slot(realm):
 		0:
 			out = [Stone.new(), Stone.new(), Stone.new(), Tuft.new(), Tuft.new(), Root.new(), Bone.new(), Skull.new()]
 		1:
 			out = [Stone.new(), Stone.new(), Bone.new(), Bone.new(), Skull.new(), Skull.new(), AshPatch.new(), Root.new()]
 		2:
 			out = [Stone.new(), Stone.new(), Bone.new(), Skull.new(), AshPatch.new(), AshPatch.new(), Root.new()]
+		TUTORIAL:
+			out = [Stone.new(), Stone.new(), Flower.new(), Flower.new(), Flower.new()]
 		_:
 			out = [Stone.new(), Stone.new(), Stone.new(), Stone.new(), Stone.new(), AshPatch.new(), Skull.new(),
 				Bone.new()]

@@ -65,6 +65,34 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
       mountains), no separate door/altar/bonfire screens (overlays on the road). Replaces PathView + doors screen.
 - [ ] WEB1 Deployed Pages build is stale (lambda catalog fix not yet pushed): menu_root compile errors.
 
+## Phase 1.6: architecture + tutorial (2026-10-22, user decisions)
+
+- [~] H1 Persistent hero: one player Fighter per run, continuous stamina/cooldowns, `Fighter.dispose()` against
+      RefCounted cycles (leak), `Fighter.recover/settle`; then `_process` recover between fights, one heal/item path
+      (road, altar, battle), one souls path. Files: `game/game_root.gd`, `core/combat/fighter.gd`.
+- [~] P1 Performance/leak: RoadScene redraw cap on web (30 Hz) and fewer rows, `PerfOverlay` (`--perf` / `?perf`)
+      to measure objects/nodes/orphans/memory on phones; soak test. Next: pre-triangulated props, cached road colors.
+- [~] T-TUT Tutorial floor 0, light childish style, once per profile: `design/tutorial.md`.
+      Done: light road look (`SceneryCatalog.TUTORIAL = 4`), enemies `tut_slime/knight/teddy` (no rigs yet),
+      `TUT_*` locale keys (`REALM_0` for the realm name), `Duel.allowed_actions` + `hold_enemy`,
+      `profile.tutorial_done`, `HintBubble` + `HighlightPulse` (`view/tutorial/`).
+      Todo: `lesson` room kind + `data/realms/realm_0.tres`, scarecrow enemy, `TutorialDirector`, GameRoot wiring
+      (realm slot 4 for the road, tutorial run does not bank Embers), Settings replay, SVG rigs, calm music.
+- 2026-10-22 tutorial wired: `GameRoot._start_tutorial` (new game, `tutorial_done == false`), `TutorialDirector` +
+  `GameTutorialHost` (`game/tutorial/`), lessons 1-5. The bubble's Skip only switches hints off (the floor goes on as
+  plain fights: slime, knight, teddy); Settings "Skip tutorial" sets `tutorial_done` (skips the floor). The tutorial
+  ends with a seamless road blend into realm 1 and a reset of souls/hp/items/levels. Not yet: lessons 6-13, music,
+  rigs. Pause-menu control change now remounts the scheme on resume. Skill `i18n` + `tools/check_locale.py`.
+- 2026-10-22 later: SVG rigs for `tut_slime/knight/teddy/scarecrow` (light pastel, `_src/tut_*.py`), lesson 6 HEAL,
+  every new run starts with 2 charges of each consumable (`START_CHARGES`), tutorial enemies are immortal until the
+  lesson ends the fight (`Duel.enemy_immortal`), highlight zone bounded. Tests: combat 57/57, soak growth 0.
+- 2026-10-22 tutorial order now: STAMINA (strike, opens it), BLOCK+PARRY+PUNISH (one slime), KNIGHT (one `tut_knight`:
+  held and immortal while the player drinks a flask and throws a bomb, then let loose for real with hints on the first
+  heavy/feint/series), FINALE exam (`tut_teddy`, real fight, everything allowed + 2 flasks + 1 bomb). Still to write:
+  souls+shop, fork, reward, altar.
+- 2026-10-22: block tuned (`block_stamina_cost` 1.35 -> 1.0, `guard_break_damage_share` 0.6 -> 0.45). Soak test:
+  `tests/soak_test.gd`. Road props pre-triangulated.
+
 ## Phase 2: release slice
 
 - [ ] Weapons with affixes, spells, prestige cycle.

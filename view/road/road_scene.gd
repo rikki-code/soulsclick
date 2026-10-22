@@ -9,7 +9,7 @@ const PROP_COUNT := 40
 const UNIT_FRAC := 0.45
 const ROAD_HALF := 0.46 ## of the width at the camera plane
 const DECAL_COUNT := 22
-const ROWS := 56
+const ROWS := 40
 const BEND := 1.0 ## road bend strength (1 = about 0.2 of the width at mid distance)
 const Z_MIN := -0.025
 const FADE_START := 0.9
@@ -18,6 +18,7 @@ const FORK_STOP_Z := 0.05
 const MTN_COLS := 48
 const CORRIDOR := 1.7 ## props keep this many road half-widths from the road centre line
 const ARRIVE_Z := 0.12 ## depth of the chosen landmark where the walk stops
+const WEB_REDRAW_STEP := 1.0 / 30.0 ## web/mobile redraw cap (seconds); other platforms redraw every frame
 
 signal fork_reached
 signal trail_picked(index: int)
@@ -52,6 +53,8 @@ var _tr_from: SceneryCatalog.Look
 var _tr_to: SceneryCatalog.Look
 var _tr_mtn_from: Array[PackedFloat32Array] = []
 var _tr_mtn_to: Array[PackedFloat32Array] = []
+var _redraw_wait := 0.0
+var _redraw_pending := false
 
 
 func _init() -> void:
@@ -155,7 +158,7 @@ func _step_transition(delta: float) -> void:
 	if _tr_t >= 1.0:
 		_tr_time = 0.0
 		_look = _tr_to
-	queue_redraw()
+	_request_redraw()
 
 
 ## Moves the camera forward by `distance` (1.0 = one horizon-to-camera depth cycle).
@@ -172,7 +175,7 @@ func scroll(distance: float) -> void:
 				p.z = minf(1.0, 1.0 + Z_MIN + over) # far end, keeps the overshoot
 				_fit_fork(p)
 	_sync_fork()
-	queue_redraw()
+	_request_redraw()
 
 
 ## Places the junction at `FORK_FAR_Z` (a world object: it approaches with `scroll` like props).
@@ -308,14 +311,29 @@ func set_speed(v: float) -> void:
 	_speed = v
 
 
+## Marks the road dirty; the actual redraw happens in _process, at most once per redraw step on web.
+func _request_redraw() -> void:
+	_redraw_pending = true
+
+
 func _process(delta: float) -> void:
+	_advance(delta)
+	_redraw_wait += delta
+	var step := WEB_REDRAW_STEP if OS.has_feature("web") else 0.0
+	if _redraw_pending and _redraw_wait >= step:
+		_redraw_wait = 0.0
+		_redraw_pending = false
+		queue_redraw()
+
+
+func _advance(delta: float) -> void:
 	if _tr_time > 0.0:
 		_step_transition(delta)
 	if _fork:
 		_fork.tick(delta)
 		if _fork.gone:
 			clear_fork()
-			queue_redraw()
+			_request_redraw()
 			return
 		if _to_trail:
 			var remain_t := _fork.landmark_z(_fork.picked) - ARRIVE_Z
@@ -338,10 +356,10 @@ func _process(delta: float) -> void:
 				_fork.reached = true
 				fork_reached.emit()
 				return
-		queue_redraw()
+		_request_redraw()
 	elif _bend_k < 1.0:
 		_bend_k = move_toward(_bend_k, 1.0, delta * 0.6)
-		queue_redraw()
+		_request_redraw()
 	if _speed != 0.0:
 		scroll(_speed * delta)
 
@@ -509,6 +527,17 @@ func _road_colors(fog_t: float, wz: float, cols: Array) -> Array[Color]:
 	return out
 
 
+## Same result as draw_colored_polygon, with the triangulation cached on the kind.
+func _draw_cached(kind: SceneryKind, poly: PackedVector2Array, color: Color) -> void:
+	var indices := kind.triangles(poly)
+	if indices.is_empty():
+		return
+	var colors := PackedColorArray()
+	colors.resize(poly.size())
+	colors.fill(color)
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), indices, poly, colors)
+
+
 func _decal_color(role: int) -> Color:
 	match role:
 		1: return _look.stone
@@ -532,9 +561,9 @@ func _draw_decals(_w: float, h: float, hy: float, cx: float, rh: float) -> void:
 		var col := Color(_decal_color(p.kind.role).lerp(_look.fog, pow(t, 0.7) * 0.85), fade)
 		draw_set_transform(pos, 0.0, Vector2(px * p.flip, px * 0.6))
 		for poly in p.kind.body:
-			draw_colored_polygon(poly, col)
+			_draw_cached(p.kind, poly, col)
 		for poly in p.kind.cut:
-			draw_colored_polygon(poly, Color(_look.rut, fade))
+			_draw_cached(p.kind, poly, Color(_look.rut, fade))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -580,10 +609,10 @@ func _draw_props(w: float, h: float, hy: float, cx: float) -> void:
 		var col := Color(_look.silhouette.lerp(_look.fog, pow(t, 0.7) * 0.9), fade)
 		draw_set_transform(pos, 0.0, Vector2(px * p.flip, px))
 		for poly in p.kind.body:
-			draw_colored_polygon(poly, col)
+			_draw_cached(p.kind, poly, col)
 		var gcol := Color(_look.accent, 0.85 * (1.0 - t) * fade)
 		for poly in p.kind.glow:
-			draw_colored_polygon(poly, gcol)
+			_draw_cached(p.kind, poly, gcol)
 	while li < lms.size():
 		_fork.draw_landmark(self, lms[li])
 		li += 1

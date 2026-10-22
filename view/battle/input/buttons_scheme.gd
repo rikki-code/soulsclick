@@ -9,6 +9,8 @@ const BUTTON_BOTTOM_SHARE := 0.015
 const BUTTON_ALPHA := 0.82
 const MARGIN_SHARE := 0.04
 const HIT_GROW := 14.0
+## Gap between a button's top edge and the tutorial arrow's tip.
+const CUE_GAP := 8.0
 const LANDSCAPE_WIDTH_SHARE := 0.22
 const LANDSCAPE_HEIGHT_SHARE := 0.6
 const LANDSCAPE_TOP_SHARE := 0.3
@@ -29,6 +31,13 @@ func _init(loadout: PlayerLoadoutView = null) -> void:
 	super(loadout)
 	_attack_button = _make_button(tr("BATTLE_ATTACK"), ATTACK_COLOR, HORIZONTAL_ALIGNMENT_CENTER)
 	_block_button = _make_button(tr("BATTLE_BLOCK"), BLOCK_COLOR, HORIZONTAL_ALIGNMENT_CENTER)
+
+func zone_rect(action_id: StringName) -> Rect2:
+	return _button_for(action_id).get_rect()
+
+func cue(action_id: StringName) -> TutorialCue:
+	var rect := zone_rect(action_id)
+	return TutorialCue.of(Vector2(rect.get_center().x, rect.position.y - CUE_GAP), Vector2.DOWN)
 
 func on_action_accepted(action_id: StringName) -> void:
 	var button := _button_for(action_id)

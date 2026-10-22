@@ -279,6 +279,16 @@ func set_input_enabled(enabled: bool) -> void:
 	if _scheme != null:
 		_scheme.set_input_enabled(enabled)
 
+## Screen rect of an item slot the tutorial points at: `slot_<item id>` or `shop` (the first slot). Empty when unknown.
+func control_rect(target: StringName) -> Rect2:
+	return _shop.rect_of(target)
+
+## How the tutorial points at the attack or block control of the mounted scheme; null before a scheme is mounted.
+func action_cue(target: StringName) -> TutorialCue:
+	if _scheme == null:
+		return null
+	return _scheme.cue(Duel.ACTION_ATTACK if target == &"attack" else Duel.ACTION_BLOCK)
+
 func press_feedback(action_id: StringName) -> void:
 	if _scheme != null:
 		_scheme.on_action_accepted(action_id)

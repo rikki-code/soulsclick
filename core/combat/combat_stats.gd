@@ -76,6 +76,13 @@ func load_base(values: Dictionary) -> void:
 func invalidate() -> void:
 	_cache.clear()
 
+## Drops the references to the owner and the stack (cycle breaker, see Fighter.dispose).
+func dispose() -> void:
+	_cache.clear()
+	_ctx.owner = null
+	_ctx.foe = null
+	_stack = null
+
 func value(stat_id: StringName) -> float:
 	if _cache.has(stat_id):
 		return _cache[stat_id]

@@ -12,6 +12,12 @@ signal block_released
 
 const MOUSE_POINTER := -1
 
+## Share of the screen height the highlighted zone may take: the hands scheme answers taps anywhere, but the ring
+## around the whole screen would point at nothing.
+const ZONE_HEIGHT_SHARES := Vector2(0.2, 0.35)
+## How far down the strip the default cue's arrow tip lands.
+const CUE_DEPTH := 0.35
+
 var input_enabled := true
 ## Screen rects (HUD buttons) where a press is not a battle action.
 var excluded_rects: Array[Rect2] = []
@@ -71,6 +77,19 @@ func reserved_height(view_size: Vector2) -> float:
 ## Strip under the hands that the scheme keeps for itself; the hands sit above it.
 func _bottom_inset(_view_size: Vector2) -> float:
 	return 0.0
+
+## Screen rect where the player acts for `action_id` (the tutorial highlights it): by default the left half of a
+## bottom strip (the hands) blocks and the right half attacks.
+func zone_rect(action_id: StringName) -> Rect2:
+	var height := clampf(reserved_height(size), size.y * ZONE_HEIGHT_SHARES.x, size.y * ZONE_HEIGHT_SHARES.y)
+	var left := size.x * 0.5 if action_id == Duel.ACTION_ATTACK else 0.0
+	return Rect2(left, size.y - height, size.x * 0.5, height)
+
+## How the tutorial points at `action_id`: an arrow from above onto that half of the strip. Schemes with their own
+## controls (buttons, swipes) override it.
+func cue(action_id: StringName) -> TutorialCue:
+	var rect := zone_rect(action_id)
+	return TutorialCue.of(Vector2(rect.get_center().x, rect.position.y + rect.size.y * CUE_DEPTH), Vector2.DOWN)
 
 func on_action_accepted(_action_id: StringName) -> void:
 	pass

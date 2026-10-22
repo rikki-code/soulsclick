@@ -145,6 +145,13 @@ func input_rects() -> Array[Rect2]:
 		rects.append(Rect2(btn.global_position, btn.size).grow(6.0))
 	return rects
 
+## Screen rect of a slot for the tutorial pointer: `slot_<item id>` for a consumable, `shop` for the first slot. Empty rect when absent.
+func rect_of(target: StringName) -> Rect2:
+	var index := 0 if target == &"shop" else _keys.find("consumable:%s" % String(target).trim_prefix("slot_"))
+	if index < 0 or index >= _buttons.size():
+		return Rect2()
+	return Rect2(_buttons[index].global_position, _buttons[index].size)
+
 ## items / levels: dictionaries {id, name, icon_path, price, info, affordable}; items may also carry `count` (owned) and
 ## `ad` (unaffordable but a rewarded ad grants it: tap still emits the buy signal), `usable` (consumable: a tap uses it while count > 0). Levels with price < 0 are maxed.
 func set_shop(items: Array[Dictionary], levels: Array[Dictionary], souls: int) -> void:

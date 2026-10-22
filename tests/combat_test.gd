@@ -73,6 +73,10 @@ func _initialize() -> void:
 	_test_attack_lock()
 	_test_stagger_punish()
 	_test_input_gate()
+	_test_allowed_actions()
+	_test_hold_enemy()
+	_test_immortal_enemy()
+	_test_parry_window_stat()
 	_test_death()
 	_test_victory()
 	_test_pattern_order()
@@ -299,6 +303,39 @@ func _test_input_gate() -> void:
 	duel.input_enabled = true
 	_run(duel, 1.0)
 	_check(duel.try_block(), "try_* works when enabled")
+
+func _test_allowed_actions() -> void:
+	var duel := _single(&"quick", 1.0)
+	var probe := Probe.new(duel)
+	duel.allowed_actions = [Duel.ACTION_BLOCK]
+	_check(not duel.try_attack() and probe.rejections.has("attack:disabled"), "try_attack refused when not in allowed_actions")
+	_check(duel.try_block(), "try_block accepted when in allowed_actions")
+
+func _test_hold_enemy() -> void:
+	var duel := _single(&"quick", 1.0)
+	var probe := Probe.new(duel)
+	duel.hold_enemy = true
+	_run(duel, 5.0)
+	_check(duel.enemy.state.id() == IdleState.ID and probe.telegraphs.is_empty() and duel.player.hp == duel.player.max_hp, "hold_enemy keeps the enemy idle")
+	duel.hold_enemy = false
+	_run_to_telegraph(duel, probe)
+	_check(not probe.telegraphs.is_empty(), "enemy telegraphs after hold_enemy is released")
+
+func _test_parry_window_stat() -> void:
+	var duel := _single(&"quick", 1.0)
+	var before := duel.player.stats.value(CombatStats.PARRY_WINDOW)
+	duel.player.mods.add(StatModifier.new(CombatStats.PARRY_WINDOW, Modifier.Stage.MUL, 2.5, &"tutorial"))
+	_check(is_equal_approx(duel.player.stats.value(CombatStats.PARRY_WINDOW), before * 2.5), "a MUL stat modifier stretches the parry window (tutorial)")
+
+func _test_immortal_enemy() -> void:
+	var duel := _single(&"quick", 30.0, 40, 1)
+	duel.enemy_immortal = true
+	duel.deal_damage(duel.enemy, 60, [], 0)
+	_check(duel.enemy.hp == 1 and not duel.finished, "immortal enemy hit past its hp stays at 1 hp, hurt but alive")
+	duel.release_enemy()
+	_check(duel.enemy.hp == 1 and not duel.enemy_immortal and not duel.hold_enemy, "release_enemy keeps the hp and lifts immortality and hold")
+	duel.deal_damage(duel.enemy, 60, [], 0)
+	_check(not duel.enemy.is_alive(), "released enemy dies to damage")
 
 func _test_death() -> void:
 	var duel := _single(&"quick", 0.5, 100, 10)

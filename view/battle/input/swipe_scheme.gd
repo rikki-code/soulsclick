@@ -4,12 +4,20 @@ class_name SwipeScheme
 extends InputScheme
 
 const THRESHOLD := 40.0
+## Where a tutorial swipe arrow starts, as shares of the screen: up from the lower middle, down from the upper middle.
+const CUE_START_UP := Vector2(0.5, 0.78)
+const CUE_START_DOWN := Vector2(0.5, 0.55)
 
 var _starts: Dictionary = {}
 var _fired: Dictionary = {}
 
 func _init(loadout: PlayerLoadoutView = null) -> void:
 	super(loadout)
+
+func cue(action_id: StringName) -> TutorialCue:
+	if action_id == Duel.ACTION_ATTACK:
+		return TutorialCue.of(size * CUE_START_UP, Vector2.UP, true)
+	return TutorialCue.of(size * CUE_START_DOWN, Vector2.DOWN, true)
 
 func _on_enabled_changed(_enabled: bool) -> void:
 	_starts.clear()

@@ -188,3 +188,39 @@ ENEMY_THRALL,Ash Thrall,Пепельный раб
 ENEMY_CROW,Carrion Crow,Падальщик-ворон
 ENEMY_CHOIRBOY,Bone Choirboy,Костяной хорист
 ENEMY_GARGOYLE,Cathedral Gargoyle,Горгулья собора
+TUT_CUE_ATTACK,Tap to strike,"Нажми — удар"
+TUT_CUE_ATTACK_HANDS,Tap here to strike,"Нажми сюда — удар"
+TUT_CUE_ATTACK_BUTTONS,Strike!,"Удар!"
+TUT_CUE_ATTACK_SWIPES,Swipe up to strike,"Свайп вверх — удар"
+TUT_CUE_BLOCK,Hold to block,"Держи — блок"
+TUT_CUE_BLOCK_HANDS,Hold here to block,"Держи здесь — блок"
+TUT_CUE_BLOCK_BUTTONS,Hold to block,"Держи — блок"
+TUT_CUE_BLOCK_SWIPES,Swipe down and hold to block,"Свайп вниз и держи — блок"
+TUT_STAMINA,Strikes cost stamina. Wait a moment to rest.,"Удары тратят выносливость. Подожди, пока она восстановится."
+TUT_PARRY,Block at the very last moment: a parry!,Блокируй в самый последний миг — это парирование!
+TUT_PUNISH,Now strike! The enemy is stunned.,Бей! Враг оглушён.
+TUT_HEAL,Tap the flask to heal.,"Нажми на флягу, чтобы вылечиться."
+TUT_SHOP,Souls buy things. Tap the bomb!,За души можно купить предметы. Нажми на бомбу!
+TUT_BOMB,Bombs hurt the enemy. Tap the bomb!,"Бомба ранит врага. Нажми на бомбу!"
+TUT_COMBO,Hit again and again without being hit: combo!,"Бей без пропусков, не получая урона: комбо!"
+TUT_HEAVY,A heavy blow cannot be blocked. Parry it!,Тяжёлый удар не заблокировать. Парируй!
+TUT_FEINT,"A feint! Don't react, wait for the real strike.","Обманный выпад! Не реагируй, жди настоящий удар."
+TUT_SERIES,Several blows in a row. Stay ready!,Несколько ударов подряд. Будь готов!
+TUT_FORK,Pick a road.,Выбери дорогу.
+TUT_REWARD,Pick a reward.,Выбери награду.
+TUT_ALTAR,Spend souls to grow stronger.,"Потрать души, чтобы стать сильнее."
+TUT_FINALE,Last lesson: everything together!,Последний урок: всё вместе!
+TUT_GREAT,Great!,Отлично!
+TUT_RETRY,"Oops, try again!","Ой, ещё раз!"
+TUT_SKIP,Skip,Пропустить
+TUT_SKIP_CONFIRM,Skip the tutorial?,Пропустить обучение?
+TUT_REPLAY,Replay tutorial,Пройти обучение заново
+ENEMY_TUT_SLIME,Jelly,Желе
+ENEMY_TUT_KNIGHT,Toy Knight,Игрушечный рыцарь
+ENEMY_TUT_TEDDY,Big Teddy,Большой Мишка
+ENEMY_TUT_SCARECROW,Scarecrow,Пугало
+REALM_0,Meadow,Луг
+SETTINGS_TUT_SHOW,Show tutorial,Показать обучение
+SETTINGS_TUT_SKIP,Skip tutorial,Пропустить обучение
+SETTINGS_TUT_SHOW_DONE,The tutorial starts with your next new game.,Обучение начнётся в следующей новой игре.
+SETTINGS_TUT_SKIP_DONE,Tutorial skipped.,Обучение пропущено.

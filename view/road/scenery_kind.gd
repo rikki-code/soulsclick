@@ -10,6 +10,15 @@ var glow: Array[PackedVector2Array] = []
 var cut: Array[PackedVector2Array] = []
 ## Road decals only: 0 = silhouette, 1 = stone, 2 = bone, 3 = grass / ash patch.
 var role := 0
+var _tri_cache := {} ## polygon content hash -> PackedInt32Array
+
+
+## Triangle indices of `poly`, computed once (polygons of a kind never change).
+func triangles(poly: PackedVector2Array) -> PackedInt32Array:
+	var key := hash(poly)
+	if not _tri_cache.has(key):
+		_tri_cache[key] = Geometry2D.triangulate_polygon(poly)
+	return _tri_cache[key]
 
 
 ## Builds a closed polygon from the right half (top to bottom, x >= 0) by mirroring it.

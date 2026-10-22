@@ -57,6 +57,12 @@ var rng := RandomNumberGenerator.new()
 var time := 0.0
 ## Human-input gate for try_attack / try_block. perform_* ignores it.
 var input_enabled := true
+## Human actions the player may use (ACTION_* ids); empty = all. The tutorial narrows it per lesson.
+var allowed_actions: Array[StringName] = []
+## While true the enemy waits: its opening delay and recoveries do not count down (the tutorial shows a prompt first).
+var hold_enemy := false
+## While true the enemy is left at 1 hp instead of dying (the tutorial ends its fights by script, not by the player's hits).
+var enemy_immortal := false
 var finished := false
 var winner: StringName = &""
 ## Consecutive player hits without taking damage; scales player attack damage (see combo_multiplier).
@@ -95,14 +101,17 @@ func advance(dt: float) -> void:
 		_tick(slice)
 	_sync_stamina()
 
+func is_allowed(action_id: StringName) -> bool:
+	return allowed_actions.is_empty() or allowed_actions.has(action_id)
+
 func try_attack() -> bool:
-	if not input_enabled:
+	if not input_enabled or not is_allowed(ACTION_ATTACK):
 		action_rejected.emit(ACTION_ATTACK, REJECT_DISABLED)
 		return false
 	return perform_attack()
 
 func try_block() -> bool:
-	if not input_enabled:
+	if not input_enabled or not is_allowed(ACTION_BLOCK):
 		action_rejected.emit(ACTION_BLOCK, REJECT_DISABLED)
 		return false
 	return perform_block()
@@ -110,7 +119,7 @@ func try_block() -> bool:
 ## Item slot tap: `item` is a consumable id (charge taken from `items`) or a ConsumableItem (free use when
 ## there is no bag). Allowed while idle or guarding.
 func use_item(item: Variant) -> bool:
-	if not input_enabled:
+	if not input_enabled or not is_allowed(ACTION_ITEM):
 		action_rejected.emit(ACTION_ITEM, REJECT_DISABLED)
 		return false
 	return perform_use_item(item)
@@ -218,6 +227,19 @@ func revive_player(hp_fraction: float) -> bool:
 	_sync_stamina()
 	return true
 
+## Tutorial: the enemy stops being held and immortal, keeping whatever health it has, for a real fight.
+func release_enemy() -> void:
+	hold_enemy = false
+	enemy_immortal = false
+
+## Scripted ending (tutorial): the enemy falls at once and the duel finishes as a player win.
+func defeat_enemy() -> void:
+	if finished:
+		return
+	enemy.hp = 0
+	_emit_hp(enemy)
+	_resolve_deaths()
+
 func foe_of(fighter: Fighter) -> Fighter:
 	return enemy if fighter == player else player
 
@@ -234,6 +256,8 @@ func deal_damage(target: Fighter, amount: int, tags: Array[StringName], depth: i
 	if amount <= 0 or not target.is_alive():
 		return 0
 	target.take_damage(amount)
+	if enemy_immortal and target == enemy and not target.is_alive():
+		target.hp = 1
 	_emit_hp(target)
 	var source := foe_of(target)
 	var is_proc := tags.has(HookApi.TAG_PROC)
@@ -312,6 +336,8 @@ func _tick(slice: float) -> void:
 
 func _tick_enemy_wait(slice: float) -> void:
 	if not enemy.state.can_act():
+		return
+	if hold_enemy:
 		return
 	_enemy_wait -= slice
 	if _enemy_wait > 0.0:

@@ -10,7 +10,7 @@ const TARGET_RADIUS := 64.0
 const START_SCALE := 3.4
 const LINE_WIDTH := 7.0
 const TARGET_WIDTH := 5.0
-const SEGMENTS := 72
+const SEGMENTS := 96
 const BAND_ALPHA := 0.22
 const BAND_LIT_ALPHA := 0.55
 const FADE_SECONDS := 0.18
@@ -104,9 +104,23 @@ func _draw() -> void:
 	var band := Color(color, (BAND_LIT_ALPHA if open else BAND_ALPHA) * alpha)
 	var mid := (target + open_radius) * 0.5
 	if _window > 0.0:
-		draw_arc(Vector2.ZERO, mid, 0.0, TAU, SEGMENTS, band, open_radius - target)
+		_stroke(mid, open_radius - target, band)
 	var target_color := Color(Color.WHITE.lerp(color, 0.35), alpha) if open else Color(color, 0.8 * alpha)
-	draw_arc(Vector2.ZERO, target + _pulse * target * OPEN_PULSE * 0.5, 0.0, TAU, SEGMENTS, target_color, TARGET_WIDTH * (1.0 + _pulse))
+	_stroke(target + _pulse * target * OPEN_PULSE * 0.5, TARGET_WIDTH * (1.0 + _pulse), target_color)
 	if _active:
 		var radius := radius_at(_elapsed, _strike_in, start, target)
-		draw_arc(Vector2.ZERO, radius, 0.0, TAU, SEGMENTS, Color(color.lightened(0.25), 0.95), LINE_WIDTH)
+		_stroke(radius, LINE_WIDTH, Color(color.lightened(0.25), 0.95))
+
+## A closed ring of `width` around `radius` as one triangle strip. (draw_arc over a full circle leaves a notch where
+## the polyline starts and ends, which shows on wide strokes.)
+func _stroke(radius: float, width: float, stroke_color: Color) -> void:
+	var half := width * 0.5
+	var points := PackedVector2Array()
+	var indices := PackedInt32Array()
+	for i in SEGMENTS:
+		var direction := Vector2.from_angle(TAU * i / SEGMENTS)
+		points.append(direction * (radius + half))
+		points.append(direction * maxf(radius - half, 0.0))
+		var next := (i + 1) % SEGMENTS * 2
+		indices.append_array([i * 2, i * 2 + 1, next, i * 2 + 1, next + 1, next])
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), indices, points, PackedColorArray([stroke_color]))

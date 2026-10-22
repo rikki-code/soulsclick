@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://core/combat/enemy_definition.gd" id="1"]
+[ext_resource type="Script" path="res://core/combat/attack_step_definition.gd" id="2"]
+
+[sub_resource type="Resource" id="quick"]
+script = ExtResource("2")
+kind_id = &"quick"
+telegraph_time = 1.6
+damage_scale = 1.0
+recovery_time = 1.5
+
+[resource]
+script = ExtResource("1")
+id = &"tut_slime"
+name_key = "ENEMY_TUT_SLIME"
+hp = 30
+damage = 1
+pattern = Array[ExtResource("2")]([SubResource("quick")])
+palette_tag = &"tutorial"
+souls_reward = 5
+opening_delay = 1.5
+post_stagger_delay = 1.0

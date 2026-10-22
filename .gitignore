@@ -4,3 +4,7 @@
 .vscode/
 
 build/
+__pycache__/
+*.pyc
+_previews/*
+!_previews/.gdignore

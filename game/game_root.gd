@@ -4,6 +4,8 @@ class_name GameRoot
 extends Control
 
 const TUNING_PATH := "res://data/tuning/default_tuning.tres"
+## Loaded by path so a stale class cache (editor not refreshed after the file was added) cannot break the scene.
+const PerfOverlayScript := preload("res://view/debug/perf_overlay.gd")
 const ATTACK_KEYS: Array[Key] = [KEY_RIGHT, KEY_D, KEY_J]
 const BLOCK_KEYS: Array[Key] = [KEY_LEFT, KEY_A, KEY_F]
 const MAX_FRAME := 0.1
@@ -29,6 +31,18 @@ const REALM_WALK_SECONDS := 2.5
 const TRAIL_ARRIVE_TIMEOUT := 4.0
 const OVERLAY_LAYER := 20
 const OVERLAY_DIM := 0.8
+## Every consumable the player starts a new run with, in charges.
+const START_CHARGES := 2
+## Tutorial layer sits above the run overlays; waits are short beats between the scripted steps.
+const TUTORIAL_LAYER := 30
+const TUTORIAL_STEP_IN := 0.8
+const TUTORIAL_WIN_WAIT := 1.2
+## Fights played in order once the hints are switched off (the level itself is not skipped).
+const TUTORIAL_PLAIN_ENEMIES: Array[StringName] = [&"tut_slime", &"tut_knight", &"tut_teddy"]
+const TUTORIAL_DUMMY := &"tut_scarecrow"
+## The parry window is stretched this much (a stat multiplier) while the tutorial runs; the hero is rebuilt after it.
+const TUTORIAL_PARRY_WINDOW_MUL := 2.5
+const TUTORIAL_SOURCE := &"tutorial"
 
 var _tuning: CombatTuning
 var _run: Run
@@ -53,11 +67,15 @@ var _paused := false
 ## Depth whose crossroads the player already answered with "go deeper".
 var _crossroads_depth := -1
 var _duel: Duel
+## The player's fighter for the whole run; every duel is fought by it.
+var _hero: Fighter
 var _wave_index := 0
 var _queued_item: StringName = &""
 var _queued_item_left := 0.0
 var _view: BattleView
 var _scheme: InputScheme
+## Id of the mounted scheme, to notice a change made in the pause menu's settings.
+var _scheme_id: StringName
 var _screen: Control
 ## Run page (altar, place, crossroads) shown above the persistent view in its own layer.
 var _overlay_layer: CanvasLayer
@@ -66,6 +84,17 @@ var _reviving := false
 var _embers_banked := false
 var _dev := false
 var _summary_screen: SummaryScreen
+## Non-null while the scripted tutorial prologue runs (before the real run's first doors).
+var _tutorial: TutorialDirector
+var _tutorial_plan: RoomPlan
+var _tutorial_layer: CanvasLayer
+var _hint: HintBubble
+var _pulse: HighlightPulse
+var _arrow: ArrowHint
+var _hints_off := false
+## True once the running tutorial fight is over and its road is free (a natural win may land before the lesson asks).
+var _tutorial_fight_done := false
+signal _tutorial_fight_ended
 
 func _ready() -> void:
 	UiScale.fit(get_window())
@@ -73,25 +102,42 @@ func _ready() -> void:
 	add_child(MenuKit.background())
 	_tuning = load(TUNING_PATH) as CombatTuning
 	_dev = DevShot.install(self) != null
+	if PerfOverlayScript.wanted():
+		add_child(PerfOverlayScript.new())
 	_run_levels = StatLevels.new(GameSession.run_table())
 	_reward_ctx = RewardContext.new(_run_levels, _inventory)
+	var fresh_run := true
 	if GameSession.launch == GameSession.Launch.CONTINUE_RUN and _load_saved_run():
-		pass
+		fresh_run = false
 	else:
 		_new_run()
 	var dev_screen := _dev_screen()
 	if dev_screen != "":
 		_show_dev_screen(dev_screen)
+	elif fresh_run and not _dev and not GameSession.profile().tutorial_done:
+		_start_tutorial()
 	else:
 		_show_phase()
 
 func _exit_tree() -> void:
 	_set_gameplay(false)
+	_dispose_hero()
 
 func _process(delta: float) -> void:
-	if _duel != null and not _duel.finished and not _paused:
+	if _paused:
+		return
+	if _duel != null and not _duel.finished:
 		_duel.advance(minf(delta, MAX_FRAME))
 		_flush_queued_item(delta)
+		return
+	_recover_hero(minf(delta, MAX_FRAME))
+
+## Between fights (road, rewards, altar) the hero rests: stamina and the block cooldown keep ticking and the bar follows.
+func _recover_hero(delta: float) -> void:
+	if _hero == null or _view == null or _hero.stamina >= _hero.max_stamina:
+		return
+	_hero.recover(delta)
+	_view.on_stamina_changed(_hero.stamina, _hero.max_stamina)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
@@ -114,12 +160,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 # --- run setup and saves ---------------------------------------------------------------------------------------
 
 func _new_run() -> void:
+	_dispose_hero()
 	GameSession.revives_used = 0
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
 	var config := RunConfig.new(SeedCode.random_seed(rng))
-	config.max_hp = PlayerBuilder.build(_tuning, _permanent(), _run_levels).max_hp
+	config.max_hp = _max_hp_now()
 	_run = Run.new(config, RealmCatalog.default_realms())
+	_grant_start_items()
+
+## A new run opens with START_CHARGES of every consumable (grant skips buffs and anything not a consumable).
+func _grant_start_items() -> void:
+	for item_id in ItemCatalog.ids():
+		_inventory.grant(item_id, START_CHARGES)
 
 func _load_saved_run() -> bool:
 	var envelope := SaveStore.load_run()
@@ -138,12 +191,30 @@ func _load_saved_run() -> bool:
 	return true
 
 func _save_run() -> void:
-	if _dev or _run == null or _run.is_ended():
+	if _dev or _tutorial != null or _run == null or _run.is_ended():
 		return
 	SaveStore.save_run({"run": _run.to_dict(), "levels": _run_levels.to_dict(), "inventory": _inventory.to_dict(), "rewards": _reward_ctx.to_dict(), "revives_used": GameSession.revives_used})
 
 func _permanent() -> StatLevels:
 	return GameSession.profile().permanent(GameSession.permanent_table())
+
+## Max hp the player would have right now (a throwaway fighter, disposed at once).
+func _max_hp_now() -> int:
+	var player := PlayerBuilder.build(_tuning, _permanent(), _run_levels)
+	var max_hp := player.max_hp
+	player.dispose()
+	return max_hp
+
+func _ensure_hero() -> Fighter:
+	if _hero == null:
+		_hero = PlayerBuilder.build(_tuning, _permanent(), _run_levels)
+		_hero.hp = clampi(_run.hp, 1, _hero.max_hp)
+	return _hero
+
+func _dispose_hero() -> void:
+	if _hero != null:
+		_hero.dispose()
+		_hero = null
 
 # --- screens ---------------------------------------------------------------------------------------------------
 
@@ -280,11 +351,15 @@ func _ensure_view() -> void:
 	if _view == null:
 		_create_view()
 	_set_view_shown(true)
-	var realm_slot := _run.depth % REALM_BACKGROUNDS
+	var realm_slot := _road_slot()
 	if _road_realm != realm_slot:
 		_road_realm = realm_slot
 		_view.set_road(realm_slot, _run.config.seed)
 	_sync_view_shop()
+
+## Road look of the moment: the light tutorial meadow, or the current realm's.
+func _road_slot() -> int:
+	return SceneryCatalog.TUTORIAL if _tutorial != null else _run.depth % REALM_BACKGROUNDS
 
 ## Run page above the view: its backdrop is dimmed so the road shows through.
 func _show_overlay(screen: Control) -> void:
@@ -375,36 +450,30 @@ func _show_altar() -> void:
 	altar.leave_requested.connect(_on_place_finished.bind(&""))
 	_show_overlay(altar)
 
-## On the road (walking, at a fork, over the reward cards) a healing consumable works at once on the run's hp.
+## The one place hp is restored outside a duel's own hooks: the hero, the run and the bar stay in step.
+func _heal_hero(amount: int) -> void:
+	var hero := _ensure_hero()
+	hero.heal(amount)
+	_run.heal(hero.hp - _run.hp)
+	if _view != null:
+		_view.on_player_hp_changed(hero.hp, hero.max_hp)
+
+## On the road (walking, at a fork, over the reward cards, at the altar) a healing consumable works at once on the hero.
 ## Anything else, or a full health bar, keeps the charge.
 func _use_item_between_fights(item_id: StringName) -> void:
 	var def := ItemCatalog.get_def(item_id) as ConsumableItem
-	var max_hp := _run.config.max_hp
-	# Over the reward cards the finished duel still holds the hp that the room will report back.
-	var hp := _duel.player.hp if _duel != null else _run.hp
-	if def == null or def.heal_share <= 0.0 or hp >= max_hp or _inventory.take_charge(item_id) == null:
+	var hero := _ensure_hero()
+	if def == null or def.heal_share <= 0.0 or hero.hp >= hero.max_hp or _inventory.take_charge(item_id) == null:
 		return
-	hp = mini(hp + ceili(max_hp * def.heal_share), max_hp)
-	if _duel != null:
-		_duel.player.hp = hp
-	else:
-		_run.heal(hp - _run.hp)
+	_heal_hero(ceili(hero.max_hp * def.heal_share))
 	if _view != null:
-		_view.on_player_hp_changed(hp, max_hp)
 		_view.on_item_used(item_id, _inventory.charges(item_id))
 	_sync_view_shop()
 	_save_run()
 
-## Outside a fight only healing consumables do anything: drink one and the run's hp goes up.
+## Outside a fight only healing consumables do anything: same rule as on the road.
 func _use_item_at_altar(item_id: StringName) -> void:
-	var def := ItemCatalog.get_def(item_id) as ConsumableItem
-	if def == null or def.heal_share <= 0.0 or _inventory.take_charge(item_id) == null:
-		return
-	_run.heal(ceili(_run.config.max_hp * def.heal_share))
-	if _view != null:
-		_view.on_player_hp_changed(_run.hp, _run.config.max_hp)
-		_view.on_item_used(item_id, _inventory.charges(item_id))
-	_save_run()
+	_use_item_between_fights(item_id)
 
 func _on_place_finished(choice: StringName) -> void:
 	var result := RoomResult.victory()
@@ -416,6 +485,9 @@ func _complete(result: RoomResult) -> void:
 	result.souls_paid = _souls_paid
 	_souls_paid = 0
 	_run.complete_room(result)
+	# The run settled the room (bonfire, rewards): the hero starts the next stretch with the run's hp.
+	if _hero != null and not _run.is_ended():
+		_hero.hp = clampi(_run.hp, 1, _hero.max_hp)
 	_clear_overlay()
 	# Whatever the room gave or took (reward flask, altar purchase, bonfire) shows in the slots right away.
 	_sync_view_shop()
@@ -433,10 +505,8 @@ func _stat_value(stat: StringName) -> float:
 
 ## In-battle shop hook: the view asks to buy a run level with the live Souls.
 func _on_buy_level_requested(stat: StringName) -> void:
-	if not _buy_run_level(stat) or _duel == null:
+	if not _buy_run_level(stat):
 		return
-	var def := _run_levels.table.def_of(stat)
-	_duel.player.mods.add(StatModifier.new(stat, Modifier.Stage.ADD, def.increment, PlayerBuilder.RUN_SOURCE))
 	_sync_view_shop()
 	_save_run()
 
@@ -535,6 +605,18 @@ func _on_pause_requested() -> void:
 
 func _on_resume_requested() -> void:
 	_paused = false
+	_apply_scheme_change()
+
+## The controls setting changed while paused: mount the new scheme at once (it used to wait for the next fight).
+func _apply_scheme_change() -> void:
+	if _view == null or _scheme == null or _duel == null or _duel.finished:
+		return
+	if _wanted_scheme_id() != _scheme_id:
+		_mount_scheme()
+
+func _wanted_scheme_id() -> StringName:
+	var saved := DevShot.scheme_override if DevShot.scheme_override != "" else GameSession.profile().input_scheme
+	return InputSchemeCatalog.resolve(saved)
 
 ## Pause menu "Abandon": the run ends now (banked like a death).
 func _on_abandon_requested() -> void:
@@ -577,12 +659,14 @@ func _buy_run_level(stat: StringName, free := false) -> bool:
 	if not free:
 		_run.add_souls(-cost)
 	_run_levels.level_up(stat)
+	if _hero != null:
+		_hero.mods.add(StatModifier.new(stat, Modifier.Stage.ADD, _run_levels.table.def_of(stat).increment, PlayerBuilder.RUN_SOURCE))
 	_refresh_max_hp()
 	return true
 
 ## A max hp level raises the run's hp cap and heals the gain.
 func _refresh_max_hp() -> void:
-	var new_max := PlayerBuilder.build(_tuning, _permanent(), _run_levels).max_hp
+	var new_max := _max_hp_now()
 	var gain := new_max - _run.config.max_hp
 	_run.config.max_hp = new_max
 	if gain > 0:
@@ -600,8 +684,9 @@ func _start_fight(plan: RoomPlan) -> void:
 	_ensure_view()
 	_preview_next_fork()
 	var realm_slot := _run.depth % REALM_BACKGROUNDS
-	var player := PlayerBuilder.build(_tuning, _permanent(), _run_levels)
+	var player := _ensure_hero()
 	player.hp = clampi(plan.player_hp, 1, player.max_hp)
+	player.settle()
 	_wave_index = 0
 	_paused = false
 	GameSession.begin_fight()
@@ -671,14 +756,15 @@ func _view_definition(plan: RoomPlan, index: int) -> EnemyDefinition:
 	return shown
 
 func _mount_scheme() -> void:
-	var saved := DevShot.scheme_override if DevShot.scheme_override != "" else GameSession.profile().input_scheme
-	var scheme_id := InputSchemeCatalog.resolve(saved)
+	var scheme_id := _wanted_scheme_id()
+	_scheme_id = scheme_id
 	_scheme = InputSchemeCatalog.make(scheme_id, PlayerLoadoutView.from_equipment(PlayerBuilder.START_SHIELD, PlayerBuilder.START_WEAPON))
 	_scheme.attack_requested.connect(_on_attack)
 	_scheme.block_requested.connect(_on_block)
 	_scheme.block_released.connect(_on_block_release)
 	_view.mount_scheme(_scheme)
-	_show_first_hint(scheme_id)
+	if _tutorial == null:
+		_show_first_hint(scheme_id)
 
 func _show_first_hint(scheme_id: StringName) -> void:
 	var profile := GameSession.profile()
@@ -725,6 +811,12 @@ func _press(action_id: StringName, accepted: bool) -> void:
 func _on_duel_finished(winner_side: StringName) -> void:
 	_set_gameplay(false)
 	_view.on_duel_finished(winner_side)
+	if _tutorial != null:
+		if winner_side == Fighter.PLAYER:
+			_on_tutorial_fight_won()
+		else:
+			_tutorial_retry()
+		return
 	if winner_side == Fighter.PLAYER:
 		if _wave_index + 1 < _run.plan.wave_size():
 			_next_wave_enemy()
@@ -743,6 +835,7 @@ func _next_wave_enemy() -> void:
 	var player := previous.player
 	previous.enter_state(player, IdleState.new())
 	player.holding_block = false
+	previous.enemy.dispose()
 	_wave_index += 1
 	_duel = _make_duel(plan, _wave_index, player)
 	_duel.combo = previous.combo
@@ -830,6 +923,10 @@ func _free_view() -> void:
 func _end_fight_state() -> void:
 	_set_gameplay(false)
 	_inventory.end_fight()
+	if _duel != null:
+		_duel.enemy.dispose()
+	if _hero != null:
+		_hero.settle()
 	_duel = null
 	_scheme = null
 	_pending_offer = null
@@ -845,6 +942,7 @@ func _set_view_shown(shown: bool) -> void:
 # --- end of run ------------------------------------------------------------------------------------------------
 
 func _finish_run() -> void:
+	_dispose_hero()
 	_clear_overlay()
 	_free_view()
 	var summary := _run.summary
@@ -883,6 +981,7 @@ func _on_save_half() -> void:
 	_summary_screen.count_to(summary.embers)
 
 func _to_menu() -> void:
+	_dispose_hero()
 	GameSession.reset_run()
 	SceneRouter.to_menu()
 
@@ -894,6 +993,197 @@ func _set_gameplay(active: bool) -> void:
 		Platform.gameplay_started()
 	else:
 		Platform.gameplay_stopped()
+
+# --- tutorial (prologue before the real run; the scripts live in game/tutorial/) --------------------------------------
+
+func _start_tutorial() -> void:
+	_tutorial = TutorialDirector.new()
+	_inventory.clear()
+	_ensure_hero().mods.add(StatModifier.new(CombatStats.PARRY_WINDOW, Modifier.Stage.MUL, TUTORIAL_PARRY_WINDOW_MUL, TUTORIAL_SOURCE))
+	_tutorial_layer = CanvasLayer.new()
+	_tutorial_layer.layer = TUTORIAL_LAYER
+	add_child(_tutorial_layer)
+	_hint = HintBubble.new()
+	_hint.set_skippable(true)
+	_hint.skip_pressed.connect(_on_tutorial_skip)
+	_tutorial_layer.add_child(_hint)
+	_pulse = HighlightPulse.new()
+	_tutorial_layer.add_child(_pulse)
+	_arrow = ArrowHint.new()
+	_tutorial_layer.add_child(_arrow)
+	_ensure_view()
+	_tutorial.finished.connect(_finish_tutorial)
+	_tutorial.run(GameTutorialHost.new(self))
+
+## True when scripted lessons must stop talking to the game: the tutorial ended or its hints were switched off.
+func tutorial_over() -> bool:
+	return _tutorial == null or _hints_off
+
+## Starts a hand-built fight against `enemy_id` and returns its duel once the enemy has stepped in.
+func tutorial_fight(enemy_id: StringName, opts: Dictionary) -> Duel:
+	var enemy := load("res://data/enemies/%s.tres" % enemy_id) as EnemyDefinition
+	var plan := RoomPlan.new()
+	plan.is_combat = true
+	plan.kind_id = FightRoom.ID
+	plan.enemy = enemy
+	plan.souls_reward = enemy.souls_reward
+	plan.combat_seed = hash(enemy_id)
+	plan.player_max_hp = _max_hp_now()
+	plan.player_hp = int(opts.get(TutorialHost.OPT_HP, plan.player_max_hp))
+	_tutorial_plan = plan
+	_tutorial_fight_done = false
+	_start_fight(plan)
+	var allowed: Array[StringName] = []
+	allowed.assign(opts.get(TutorialHost.OPT_ALLOWED, []))
+	_duel.allowed_actions = allowed
+	_duel.hold_enemy = bool(opts.get(TutorialHost.OPT_HOLD, false))
+	_duel.enemy_immortal = not bool(opts.get(TutorialHost.OPT_MORTAL, false))
+	var duel := _duel
+	await get_tree().create_timer(TUTORIAL_STEP_IN).timeout
+	return duel
+
+## Defeats the enemy of the running tutorial fight; returns when the road is free for the next lesson.
+func tutorial_win() -> void:
+	if _duel == null or _tutorial_fight_done:
+		return
+	_duel.hold_enemy = true
+	_duel.defeat_enemy()
+	await _tutorial_fight_ended
+
+func _on_tutorial_fight_won() -> void:
+	await get_tree().create_timer(TUTORIAL_WIN_WAIT).timeout
+	if _tutorial == null:
+		return
+	_end_fight_state()
+	_tutorial_fight_done = true
+	_tutorial_fight_ended.emit()
+
+## The tutorial never ends a run: the duel carries on with the player restored.
+func _tutorial_retry() -> void:
+	if _duel == null or not _duel.revive_player(1.0):
+		return
+	_view.begin(_view_definition(_tutorial_plan, 0), _duel.enemy, _duel.player)
+	_set_gameplay(true)
+	if _hint != null:
+		_hint.flash_praise(tr("TUT_RETRY"))
+
+## The text for `text_key`, or its `<key>_<SCHEME>` variant when the player's input scheme has its own wording.
+func _tutorial_text(text_key: String) -> String:
+	var variant := "%s_%s" % [text_key, String(_scheme_id).to_upper()]
+	return tr(variant) if tr(variant) != variant else tr(text_key)
+
+func tutorial_say(text_key: String) -> void:
+	_hint.show_hint(_tutorial_text(text_key))
+
+func tutorial_hush() -> void:
+	_hint.hide_hint()
+	_pulse.clear()
+	_arrow.clear()
+
+func tutorial_praise() -> void:
+	_hint.flash_praise(tr("TUT_GREAT"))
+
+## attack / block: an arrow with a short label made for the player's input scheme. Item slots: the pulsing ring.
+func tutorial_point(target: StringName) -> void:
+	_pulse.clear()
+	_arrow.clear()
+	if target == TutorialHost.TARGET_NONE or _view == null:
+		return
+	if target == TutorialHost.TARGET_ATTACK or target == TutorialHost.TARGET_BLOCK:
+		var cue := _view.action_cue(target)
+		if cue != null:
+			_arrow.show_cue(cue, _tutorial_text("TUT_CUE_%s" % String(target).to_upper()))
+		return
+	_pulse.target(_view.control_rect(target))
+
+func tutorial_give_item(item_id: StringName, count: int) -> void:
+	_inventory.grant(item_id, count)
+	_sync_view_shop()
+
+func tutorial_set_hp(hp: int) -> void:
+	var hero := _ensure_hero()
+	hero.hp = clampi(hp, 1, hero.max_hp)
+	_run.heal(hero.hp - _run.hp)
+	if _view != null:
+		_view.on_player_hp_changed(hero.hp, hero.max_hp)
+
+func tutorial_pause(seconds: float) -> void:
+	await get_tree().create_timer(seconds).timeout
+
+## The bubble's Skip: hints and highlights go away for good, but the level stays. The lesson scripts stop (their
+## calls park), the restrictions lift, and the rest of the floor is plain fights ending in the real run.
+func _on_tutorial_skip() -> void:
+	if _tutorial == null or _hints_off:
+		return
+	_hints_off = true
+	_tutorial_layer.queue_free()
+	_tutorial_layer = null
+	_hint = null
+	_pulse = null
+	_arrow = null
+	if _duel != null:
+		_duel.allowed_actions = []
+		_duel.hold_enemy = false
+		_duel.enemy_immortal = false
+	_run_plain_tutorial()
+
+func _run_plain_tutorial() -> void:
+	if _duel != null and not _duel.finished:
+		if _duel.definition.id == TUTORIAL_DUMMY:
+			_duel.defeat_enemy()
+		await _tutorial_fight_ended
+	for enemy_id in TUTORIAL_PLAIN_ENEMIES:
+		if _tutorial == null:
+			return
+		await tutorial_fight(enemy_id, {TutorialHost.OPT_MORTAL: true})
+		await _tutorial_fight_ended
+	_finish_tutorial()
+
+## Done (or the hints were switched off and the plain fights are won): the sandbox is wiped (fresh souls, hp, items, levels, hero), the profile remembers it, and the
+## same road blends into realm 1 and the real run begins. Safe to call twice.
+func _finish_tutorial() -> void:
+	if _tutorial == null:
+		return
+	_tutorial = null
+	_tutorial_plan = null
+	_hints_off = false
+	if _tutorial_layer != null:
+		_tutorial_layer.queue_free()
+		_tutorial_layer = null
+	_hint = null
+	_pulse = null
+	_arrow = null
+	_end_fight_state()
+	_tutorial_fight_ended.emit()
+	_reset_after_tutorial()
+	GameSession.profile().tutorial_done = true
+	GameSession.save_profile()
+	var view := _view
+	var slot := _road_slot()
+	_road_realm = slot
+	view.clear_enemy()
+	view.transition_road(slot, _run.config.seed, REALM_WALK_SECONDS)
+	view.walk(REALM_WALK_SECONDS)
+	await view.walk_finished
+	if _view != view or not is_instance_valid(view):
+		return
+	_show_phase()
+
+func _reset_after_tutorial() -> void:
+	_dispose_hero()
+	_inventory.clear()
+	_grant_start_items()
+	_run_levels = StatLevels.new(GameSession.run_table())
+	_reward_ctx = RewardContext.new(_run_levels, _inventory)
+	_relic_mods.clear()
+	GameSession.revives_used = 0
+	_run.config.max_hp = _max_hp_now()
+	_run.add_souls(_run.config.start_souls - _run.souls)
+	_run.heal(_run.config.max_hp - _run.hp)
+	if _view != null:
+		_view.on_player_hp_changed(_run.hp, _run.config.max_hp)
+		_view.set_souls(_run.souls)
+		_sync_view_shop()
 
 # --- dev -------------------------------------------------------------------------------------------------------
 

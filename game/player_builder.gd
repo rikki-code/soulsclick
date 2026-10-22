@@ -20,4 +20,7 @@ static func build(tuning: CombatTuning, permanent: StatLevels, run_levels: StatL
 
 ## Current resolved value of one stat for the level-up screens.
 static func stat_value(tuning: CombatTuning, permanent: StatLevels, run_levels: StatLevels, stat: StringName) -> float:
-	return build(tuning, permanent, run_levels).stats.value(stat)
+	var player := build(tuning, permanent, run_levels)
+	var value := player.stats.value(stat)
+	player.dispose()
+	return value

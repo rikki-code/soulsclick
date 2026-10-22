@@ -67,6 +67,15 @@ func fire(hook: StringName, ctx: HookCtx, duel: Duel) -> void:
 		ctx.fx = HookApi.new(duel, mod, ctx.owner.side, ctx.depth)
 		mod.call(hook, ctx)
 
+## Breaks the owner cycle so the fighter can be freed. The stack is unusable afterwards.
+func dispose() -> void:
+	for mod in _items:
+		if mod.owner == _owner:
+			mod.owner = null
+	_items.clear()
+	_ordered.clear()
+	_owner = null
+
 func _resort() -> void:
 	_ordered = _items.duplicate()
 	_ordered.sort_custom(_before)
