@@ -26,12 +26,11 @@ func _ready() -> void:
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_dim)
 	_dim.gui_input.connect(_on_dim_input)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
+	var fit := FitBox.new()
+	fit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(fit)
 	_box.add_theme_constant_override("separation", SEPARATION)
-	center.add_child(_box)
+	fit.add_child(_box)
 
 func show_victory(souls: int, delay: float) -> void:
 	_reset()
@@ -48,8 +47,8 @@ func show_death(can_revive: bool, delay: float) -> void:
 	_reset()
 	_add_label(tr("BATTLE_DEATH"), TITLE_SIZE)
 	if can_revive:
-		_add_button(tr("BATTLE_REVIVE") % GameSession.revive_ads(), revive_pressed.emit)
-	_add_button(tr("MENU_BACK"), menu_pressed.emit)
+		_add_button(tr("BATTLE_REVIVE") % GameSession.revive_ads(), revive_pressed.emit, true)
+	_add_button(tr("MENU_BACK"), menu_pressed.emit, false)
 	_reveal(delay)
 
 func hide_overlay() -> void:
@@ -79,13 +78,10 @@ func _add_label(text: String, font_size: int) -> void:
 	label.add_theme_constant_override("outline_size", 8)
 	_box.add_child(label)
 
-func _add_button(text: String, on_pressed: Callable) -> void:
-	var button := Button.new()
-	button.text = text
+## `accent` makes it the gold main button, the others are plain tiles.
+func _add_button(text: String, on_pressed: Callable, accent: bool) -> void:
+	var button := MenuKit.accent_button(_box, text, on_pressed) if accent else MenuKit.tile_button(_box, text, on_pressed)
 	button.custom_minimum_size = BUTTON_SIZE
-	button.add_theme_font_size_override("font_size", TEXT_SIZE)
-	button.pressed.connect(on_pressed)
-	_box.add_child(button)
 
 ## Tapping anywhere skips the victory wait; death panels keep their buttons.
 func _on_dim_input(event: InputEvent) -> void:

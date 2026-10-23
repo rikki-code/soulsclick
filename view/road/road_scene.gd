@@ -464,8 +464,9 @@ func _draw_trunk(w: float, h: float, hy: float, cx: float, z_top: float) -> void
 	var sh := PackedFloat32Array()
 	var rowcols: Array = []
 	var cols := [-1.0, -0.9, -0.5, 0.0, 0.5, 0.9, 1.0]
-	for i in ROWS + 1:
-		var t := pow(float(i) / float(ROWS), 2.0)
+	var rows := ROWS
+	for i in rows + 1:
+		var t := pow(float(i) / float(rows), 2.0)
 		var s := sfar + (1.0 - sfar) * t
 		var z := (1.0 / s - 1.0) / DEPTH_K
 		var wz := z + _travel
@@ -476,8 +477,12 @@ func _draw_trunk(w: float, h: float, hy: float, cx: float, z_top: float) -> void
 		hr.append(rh * s * _edge(wz, 1.0))
 		sh.append(_shift(z))
 		rowcols.append(_road_colors(pow(clampf(z, 0.0, 1.0), 0.7) * 0.85, wz, cols))
-	# soft-edged trail: ragged dark rim -> mottled dirt, fogged with distance
-	for i in ROWS:
+	# soft-edged trail: ragged dark rim -> mottled dirt, fogged with distance. The whole trunk (dirt and ruts)
+	# is one triangle batch: hundreds of separate draw_polygon calls were the main cost of a road frame.
+	var verts := PackedVector2Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	for i in rows:
 		var ca: Array = rowcols[i + 1]
 		var cb: Array = rowcols[i]
 		for j in 6:
@@ -487,13 +492,13 @@ func _draw_trunk(w: float, h: float, hy: float, cx: float, z_top: float) -> void
 			var xb1: float = hl[i] if cols[j + 1] < 0.0 else hr[i]
 			var ca_x := cx + sh[i + 1]
 			var cb_x := cx + sh[i]
-			draw_polygon(PackedVector2Array([
+			_add_quad(verts, colors, indices,
 				Vector2(ca_x + cols[j] * absf(xa0), ys[i + 1]), Vector2(ca_x + cols[j + 1] * absf(xa1), ys[i + 1]),
-				Vector2(cb_x + cols[j + 1] * absf(xb1), ys[i]), Vector2(cb_x + cols[j] * absf(xb0), ys[i])]),
-				PackedColorArray([ca[j], ca[j + 1], cb[j + 1], cb[j]]))
+				Vector2(cb_x + cols[j + 1] * absf(xb1), ys[i]), Vector2(cb_x + cols[j] * absf(xb0), ys[i]),
+				ca[j], ca[j + 1], cb[j + 1], cb[j])
 	# faint soft wheel ruts
 	for side in [-1.0, 1.0]:
-		for i in ROWS:
+		for i in rows:
 			var wa := _noise.get_noise_1d((zs[i + 1] + _travel) * 9.0 + side * 40.0) * 0.06
 			var wb := _noise.get_noise_1d((zs[i] + _travel) * 9.0 + side * 40.0) * 0.06
 			var ca: float = cx + sh[i + 1] + (side * 0.4 + wa) * hs[i + 1]
@@ -503,10 +508,31 @@ func _draw_trunk(w: float, h: float, hy: float, cx: float, z_top: float) -> void
 			var al := 0.3 * (1.0 - clampf(zs[i], 0.0, 1.0))
 			var c1 := Color(_look.rut, al)
 			var c0 := Color(_look.rut, 0.0)
-			draw_polygon(PackedVector2Array([Vector2(ca - ra, ys[i + 1]), Vector2(ca, ys[i + 1]),
-				Vector2(cb, ys[i]), Vector2(cb - rb, ys[i])]), PackedColorArray([c0, c1, c1, c0]))
-			draw_polygon(PackedVector2Array([Vector2(ca, ys[i + 1]), Vector2(ca + ra, ys[i + 1]),
-				Vector2(cb + rb, ys[i]), Vector2(cb, ys[i])]), PackedColorArray([c1, c0, c0, c1]))
+			_add_quad(verts, colors, indices, Vector2(ca - ra, ys[i + 1]), Vector2(ca, ys[i + 1]),
+				Vector2(cb, ys[i]), Vector2(cb - rb, ys[i]), c0, c1, c1, c0)
+			_add_quad(verts, colors, indices, Vector2(ca, ys[i + 1]), Vector2(ca + ra, ys[i + 1]),
+				Vector2(cb + rb, ys[i]), Vector2(cb, ys[i]), c1, c0, c0, c1)
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), indices, verts, colors)
+
+
+## Appends a convex quad (corners in order) with per-corner colors to a triangle batch.
+static func _add_quad(verts: PackedVector2Array, colors: PackedColorArray, indices: PackedInt32Array,
+		p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, c0: Color, c1: Color, c2: Color, c3: Color) -> void:
+	var base := verts.size()
+	verts.append(p0)
+	verts.append(p1)
+	verts.append(p2)
+	verts.append(p3)
+	colors.append(c0)
+	colors.append(c1)
+	colors.append(c2)
+	colors.append(c3)
+	indices.append(base)
+	indices.append(base + 1)
+	indices.append(base + 2)
+	indices.append(base)
+	indices.append(base + 2)
+	indices.append(base + 3)
 
 
 func _road_colors(fog_t: float, wz: float, cols: Array) -> Array[Color]:

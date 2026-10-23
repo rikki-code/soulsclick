@@ -447,8 +447,9 @@ func draw_labels(r: RoadScene) -> void:
 			if text == "":
 				continue
 			var fs: int = line[1]
-			while fs > 9 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > maxw:
-				fs -= 1
+			var natural := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			if natural > maxw:
+				fs = maxi(floori(float(fs) * maxw / natural), 9)
 			var c: Color = line[2]
 			c.a = a
 			var pos := Vector2(x - maxw * 0.5, y)

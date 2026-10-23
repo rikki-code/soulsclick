@@ -55,14 +55,13 @@ func setup(offer: RewardOffer) -> RewardOverlay:
 	dim.color = DIM_COLOR
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
+	var fit := FitBox.new()
+	fit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(fit)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", TITLE_GAP)
 	box.custom_minimum_size.x = 1080 - 2 * MARGIN
-	center.add_child(box)
+	fit.add_child(box)
 	_box = box
 	var title := MenuKit.label(tr("REWARD_TITLE"), TITLE_SIZE)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

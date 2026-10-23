@@ -1,4 +1,4 @@
-## Base of the full-screen run pages (omens, doors, level-up, rest, summary): dark background, centered page of big text.
+## Base of the full-screen run pages (omens, doors, level-up, rest, summary): dark background, centered page of big text that shrinks to fit any window.
 class_name RunScreen
 extends Control
 
@@ -14,32 +14,35 @@ func _init() -> void:
 ## Builds the page with a title; call once from the subclass setup.
 func _build(title: String) -> void:
 	add_child(MenuKit.background())
-	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	add_child(scroll)
-	var center := CenterContainer.new()
-	center.theme = MenuKit.big_text_theme()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.add_child(center)
-	_page = MenuKit.page(center, title)
+	var fit := FitBox.new()
+	fit.theme = MenuKit.big_text_theme()
+	add_child(fit)
+	_page = MenuKit.page(fit, title)
 	_page.get_child(0).add_theme_font_size_override("font_size", 56)
-	scroll.resized.connect(func() -> void: center.custom_minimum_size = scroll.size)
 
-func _text(text: String, size := MenuKit.FONT_SIZE, color := Color.WHITE) -> Label:
+## A wrapped line on the page, or inside `panel` (a MenuKit.group) when given.
+func _text(text: String, size := MenuKit.FONT_SIZE, color := Color.WHITE, panel: Control = null) -> Label:
 	var label := MenuKit.label(text, size)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size.x = MenuKit.PAGE_WIDTH
 	label.add_theme_color_override("font_color", color)
-	_page.add_child(label)
+	if panel == null:
+		label.custom_minimum_size.x = MenuKit.PAGE_WIDTH
+		_page.add_child(label)
+	else:
+		panel.add_child(label)
 	return label
 
 func _status(run: Run) -> void:
 	_text(RunScreen.status_text(run), STATUS_SIZE, MUTED)
 
 func _button(text: String, on_pressed: Callable, height := MenuKit.ROW_HEIGHT) -> Button:
-	var button := MenuKit.button(_page, text, on_pressed)
+	var button := MenuKit.tile_button(_page, text, on_pressed)
+	button.custom_minimum_size.y = height
+	return button
+
+## The gold button: the main way on (Again, Rest, Continue).
+func _accent_button(text: String, on_pressed: Callable, height := MenuKit.ROW_HEIGHT) -> Button:
+	var button := MenuKit.accent_button(_page, text, on_pressed)
 	button.custom_minimum_size.y = height
 	return button
 

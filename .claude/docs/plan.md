@@ -93,6 +93,15 @@ owns, so parallel work does not collide. Design: `game_design.md`. Contracts: `a
 - 2026-10-22: block tuned (`block_stamina_cost` 1.35 -> 1.0, `guard_break_damage_share` 0.6 -> 0.45). Soak test:
   `tests/soak_test.gd`. Road props pre-triangulated.
 
+- 2026-10-23 web report: (1) menus overflowed short/wide windows -> `FitBox` everywhere (menu, settings, pause, battle
+  overlay, reward overlay, run screens); (2) Chrome/Windows froze on death -> Back: `RunScreen` resized-feedback loop
+  (see `shell` skill), removed; (3) fps/music stutter: the trunk (dirt + ruts, ~400 draw_polygon calls) is one
+  triangle batch (`_add_quad`), fork label fit without the shrink loop. A draw-cost-adaptive redraw rate / row count
+  was tried and removed: it made the road judder (redraw every 2nd frame while the road moves every frame).
+  NOT verified in a build (no Godot binary in that session): check on a Windows Chrome web export with `?perf`,
+  a short landscape window (e.g. 1366x600) for menu/settings/summary, death -> Back. Open: web audio runs on the
+  main thread (`default_playback_type.web=0`), so any frame spike still stutters music; `_draw_props` re-sorts every frame.
+
 ## Phase 2: release slice
 
 - [ ] Weapons with affixes, spells, prestige cycle.

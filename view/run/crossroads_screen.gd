@@ -10,5 +10,5 @@ func setup(run: Run) -> CrossroadsScreen:
 	_status(run)
 	_text(tr("CROSSROADS_HINT"), 32, MUTED)
 	_button(tr("CROSSROADS_RETIRE") % run.souls, retire_requested.emit, BIG_BUTTON_HEIGHT)
-	_button(tr("CROSSROADS_DEEPER") % (run.depth + 1), deeper_requested.emit, BIG_BUTTON_HEIGHT)
+	_accent_button(tr("CROSSROADS_DEEPER") % (run.depth + 1), deeper_requested.emit, BIG_BUTTON_HEIGHT)
 	return self

@@ -124,3 +124,5 @@ equipped shield and weapon; poses: idle, block, parry, attack, hurt, guard_broke
 Portrait base 1080×1920 (`project.godot`), `UiScale.fit()` turns it landscape on wide windows (rpgmatch
 `view/ui_scale.gd`). UI built in code with a shared kit; all player-facing strings are translation keys
 (`tr("BATTLE_ATTACK")`). Buttons large enough for thumbs; the two combat buttons fill the bottom third.
+Every menu/overlay page sits in a `FitBox` (`view/shell/fit_box.gd`): it shrinks the page to fit any window aspect.
+No UI may depend on a particular window size; see the `shell` skill for the layout-feedback-loop trap.

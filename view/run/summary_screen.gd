@@ -7,6 +7,7 @@ signal menu_pressed
 signal save_half_pressed
 
 const COUNT_SECONDS := 1.2
+const BUTTON_HEIGHT := 100.0
 
 var _embers_label: Label
 var _save_button: Button
@@ -14,15 +15,16 @@ var _shown_embers := 0
 
 func setup(summary: RunSummary, can_save_half: bool) -> SummaryScreen:
 	_build(tr("SUMMARY_VICTORY") if summary.victory else (tr("SUMMARY_ABANDON") if summary.outcome_id == &"abandon" else tr("SUMMARY_DEATH")))
-	_text(tr("SUMMARY_PROGRESS") % [summary.realm_reached, summary.realm_count, summary.rooms_cleared])
-	_text(tr("SUMMARY_SOULS") % summary.souls, 40, Color(0.95, 0.85, 0.5))
-	_embers_label = _text("", 48, Color(1.0, 0.6, 0.3))
+	var stats := MenuKit.group(_page)
+	_text(tr("SUMMARY_PROGRESS") % [summary.realm_reached, summary.realm_count, summary.rooms_cleared], MenuKit.TILE_FONT_SIZE, Color.WHITE, stats)
+	_text(tr("SUMMARY_SOULS") % summary.souls, 40, Color(0.95, 0.85, 0.5), stats)
+	_embers_label = _text("", 48, Color(1.0, 0.6, 0.3), stats)
 	if summary.killer_enemy_id != &"":
-		_text(tr("SUMMARY_KILLER") % tr("ENEMY_" + String(summary.killer_enemy_id).to_upper()), 30, MUTED)
-	_text(tr("SUMMARY_SEED") % summary.seed_code, 30, MUTED)
+		_text(tr("SUMMARY_KILLER") % tr("ENEMY_" + String(summary.killer_enemy_id).to_upper()), MenuKit.HINT_FONT_SIZE, MUTED, stats)
+	_text(tr("SUMMARY_SEED") % summary.seed_code, MenuKit.HINT_FONT_SIZE, MUTED, stats)
 	if can_save_half:
-		_save_button = _button(tr("SUMMARY_SAVE_HALF"), save_half_pressed.emit, 120.0)
-	_button(tr("SUMMARY_AGAIN"), again_pressed.emit, 120.0)
+		_save_button = _button(tr("SUMMARY_SAVE_HALF"), save_half_pressed.emit, BUTTON_HEIGHT)
+	_accent_button(tr("SUMMARY_AGAIN"), again_pressed.emit, BUTTON_HEIGHT)
 	_button(tr("MENU_BACK"), menu_pressed.emit)
 	count_to(summary.embers)
 	return self
